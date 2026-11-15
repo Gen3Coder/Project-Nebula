@@ -1,0 +1,7 @@
+{
+    "start": "2015-03-31",
+    "end": "2026-11-09",
+    "rows": 4242,
+    "file": "smap_l4_bale.csv",
+    "download_method": "Earth Engine direct CSV"
+}

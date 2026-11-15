@@ -1,0 +1,7 @@
+{
+    "start": "2015-03-31",
+    "end": "2026-11-12",
+    "rows": 4245,
+    "file": "smap_l3_arsi.csv",
+    "download_method": "Earth Engine direct CSV"
+}

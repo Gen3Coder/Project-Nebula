@@ -1,0 +1,53 @@
+{
+  "target": "false_start = 1 if a dry spell of >= 8 days (< 1.0 mm/day) occurs within 30 days after an onset trigger (20.0 mm in 3 days, >= 2 wet days).",
+  "model": "Random Forest [compact]",
+  "n_events": 229,
+  "train_years": [
+    1981,
+    2026
+  ],
+  "beats_region_window_climatology_in_selection": true,
+  "beats_region_window_climatology_on_holdout": false,
+  "holdout_test": {
+    "pr_auc": 0.5426769868926996,
+    "roc_auc": 0.6013793103448276,
+    "brier": 0.24812931526263216,
+    "brier_skill": 0.010287149783101524,
+    "recall@prec0.6": 0.2,
+    "n": 54.0
+  },
+  "holdout_roc_auc_ci95": [
+    0.5098835260599967,
+    0.7157174059139784
+  ],
+  "leave_one_year_out_all_events": {
+    "n": 229.0,
+    "positives": 114.0,
+    "pr_auc": 0.5949813033107667,
+    "brier": 0.23925619852098923,
+    "brier_skill": 0.04295695601531657,
+    "log_loss": 0.6719507131706368,
+    "recall@prec0.6": 0.5263157894736842,
+    "roc_auc": 0.6246376811594203
+  },
+  "loyo_roc_auc_ci95": [
+    0.5661564395472123,
+    0.6791139892012275
+  ],
+  "threshold_rule": "maximises balanced accuracy on leave-one-year-out predictions",
+  "threshold": 0.56,
+  "balanced_accuracy_at_threshold": 0.624,
+  "risk_bands": {
+    "low_max": 0.4,
+    "high_min": 0.6
+  },
+  "versions": {
+    "python": "3.13.12",
+    "sklearn": "1.9.1"
+  },
+  "limitations": [
+    "Label comes from rainfall rules (CHIRPS), not observed crop failure.",
+    "Region points are provisional centroids, not official boundaries.",
+    "About 230 events from 46 years: expect wide uncertainty; treat output as risk, not a forecast of crop death."
+  ]
+}

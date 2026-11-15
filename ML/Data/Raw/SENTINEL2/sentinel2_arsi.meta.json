@@ -1,0 +1,7 @@
+{
+    "start": "2017-01-01",
+    "end": "2026-11-15",
+    "rows": 1061,
+    "file": "sentinel2_arsi.csv",
+    "download_method": "Earth Engine direct CSV"
+}

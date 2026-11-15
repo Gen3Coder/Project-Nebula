@@ -1,0 +1,213 @@
+{
+  "selected": "Random Forest [compact]",
+  "beats_climatology": true,
+  "threshold": 0.56,
+  "selection_table": [
+    {
+      "model": "Random Forest [compact]",
+      "pr_auc": 0.6655,
+      "roc_auc": 0.6561,
+      "brier": 0.2336,
+      "brier_skill": 0.0653,
+      "recall@prec0.6": 0.7416
+    },
+    {
+      "model": "Random Forest [all]",
+      "pr_auc": 0.6445,
+      "roc_auc": 0.6338,
+      "brier": 0.2389,
+      "brier_skill": 0.0442,
+      "recall@prec0.6": 0.6966
+    },
+    {
+      "model": "Extra Trees [compact]",
+      "pr_auc": 0.6357,
+      "roc_auc": 0.6027,
+      "brier": 0.243,
+      "brier_skill": 0.0276,
+      "recall@prec0.6": 0.5955
+    },
+    {
+      "model": "Extra Trees [all]",
+      "pr_auc": 0.6157,
+      "roc_auc": 0.5843,
+      "brier": 0.2447,
+      "brier_skill": 0.0208,
+      "recall@prec0.6": 0.4719
+    },
+    {
+      "model": "HistGradientBoosting [compact]",
+      "pr_auc": 0.6414,
+      "roc_auc": 0.6415,
+      "brier": 0.2458,
+      "brier_skill": 0.0166,
+      "recall@prec0.6": 0.6517
+    },
+    {
+      "model": "HistGradientBoosting [all]",
+      "pr_auc": 0.6465,
+      "roc_auc": 0.6404,
+      "brier": 0.2473,
+      "brier_skill": 0.0104,
+      "recall@prec0.6": 0.573
+    },
+    {
+      "model": "Logistic (L2, C=1) [compact]",
+      "pr_auc": 0.621,
+      "roc_auc": 0.5911,
+      "brier": 0.2488,
+      "brier_skill": 0.0044,
+      "recall@prec0.6": 0.5506
+    },
+    {
+      "model": "Baseline: overall rate",
+      "pr_auc": 0.3985,
+      "roc_auc": 0.21,
+      "brier": 0.2539,
+      "brier_skill": -0.016,
+      "recall@prec0.6": 0.0
+    },
+    {
+      "model": "Logistic (L2, C=0.1) [compact]",
+      "pr_auc": 0.5363,
+      "roc_auc": 0.5432,
+      "brier": 0.2542,
+      "brier_skill": -0.0171,
+      "recall@prec0.6": 0.3708
+    },
+    {
+      "model": "Baseline: region+window climatology",
+      "pr_auc": 0.5031,
+      "roc_auc": 0.4594,
+      "brier": 0.2555,
+      "brier_skill": -0.0224,
+      "recall@prec0.6": 0.2472
+    },
+    {
+      "model": "Logistic (L2, C=0.1) [all]",
+      "pr_auc": 0.5219,
+      "roc_auc": 0.5037,
+      "brier": 0.2666,
+      "brier_skill": -0.0668,
+      "recall@prec0.6": 0.0674
+    },
+    {
+      "model": "Logistic (L2, C=1) [all]",
+      "pr_auc": 0.5711,
+      "roc_auc": 0.5351,
+      "brier": 0.2743,
+      "brier_skill": -0.0974,
+      "recall@prec0.6": 0.382
+    }
+  ],
+  "holdout_table": [
+    {
+      "model": "Baseline: region+window climatology",
+      "pr_auc": 0.5941,
+      "roc_auc": 0.6993,
+      "brier": 0.2269,
+      "brier_skill": 0.0949,
+      "recall@prec0.6": 0.28,
+      "selected": false
+    },
+    {
+      "model": "Extra Trees [all]",
+      "pr_auc": 0.5565,
+      "roc_auc": 0.6483,
+      "brier": 0.2278,
+      "brier_skill": 0.0914,
+      "recall@prec0.6": 0.84,
+      "selected": false
+    },
+    {
+      "model": "Extra Trees [compact]",
+      "pr_auc": 0.5894,
+      "roc_auc": 0.6593,
+      "brier": 0.2287,
+      "brier_skill": 0.0879,
+      "recall@prec0.6": 0.44,
+      "selected": false
+    },
+    {
+      "model": "Random Forest [all]",
+      "pr_auc": 0.536,
+      "roc_auc": 0.6124,
+      "brier": 0.2397,
+      "brier_skill": 0.044,
+      "recall@prec0.6": 0.04,
+      "selected": false
+    },
+    {
+      "model": "Logistic (L2, C=0.1) [compact]",
+      "pr_auc": 0.5194,
+      "roc_auc": 0.5517,
+      "brier": 0.2436,
+      "brier_skill": 0.0284,
+      "recall@prec0.6": 0.08,
+      "selected": false
+    },
+    {
+      "model": "Random Forest [compact]",
+      "pr_auc": 0.5427,
+      "roc_auc": 0.6014,
+      "brier": 0.2481,
+      "brier_skill": 0.0103,
+      "recall@prec0.6": 0.2,
+      "selected": true
+    },
+    {
+      "model": "Baseline: overall rate",
+      "pr_auc": 0.463,
+      "roc_auc": 0.5,
+      "brier": 0.2507,
+      "brier_skill": 0.0,
+      "recall@prec0.6": 0.0,
+      "selected": false
+    },
+    {
+      "model": "Logistic (L2, C=1) [all]",
+      "pr_auc": 0.519,
+      "roc_auc": 0.5876,
+      "brier": 0.2508,
+      "brier_skill": -0.0003,
+      "recall@prec0.6": 0.08,
+      "selected": false
+    },
+    {
+      "model": "Logistic (L2, C=0.1) [all]",
+      "pr_auc": 0.4652,
+      "roc_auc": 0.5531,
+      "brier": 0.2516,
+      "brier_skill": -0.0035,
+      "recall@prec0.6": 0.0,
+      "selected": false
+    },
+    {
+      "model": "Logistic (L2, C=1) [compact]",
+      "pr_auc": 0.4849,
+      "roc_auc": 0.5407,
+      "brier": 0.2519,
+      "brier_skill": -0.0047,
+      "recall@prec0.6": 0.04,
+      "selected": false
+    },
+    {
+      "model": "HistGradientBoosting [all]",
+      "pr_auc": 0.6224,
+      "roc_auc": 0.6441,
+      "brier": 0.2537,
+      "brier_skill": -0.0118,
+      "recall@prec0.6": 0.56,
+      "selected": false
+    },
+    {
+      "model": "HistGradientBoosting [compact]",
+      "pr_auc": 0.5154,
+      "roc_auc": 0.5697,
+      "brier": 0.2724,
+      "brier_skill": -0.0867,
+      "recall@prec0.6": 0.48,
+      "selected": false
+    }
+  ]
+}
