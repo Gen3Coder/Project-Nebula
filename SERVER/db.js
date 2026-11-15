@@ -4,7 +4,7 @@ dotenv.config();
 
 const { Pool } = pg;
 
-export const pool = new Pool({
+export const db = new Pool({
   user: process.env.DBUSER || 'postgres',
   host: process.env.DBHOST || 'localhost',
   database: process.env.DBNAME || 'projectNebula',

@@ -2,7 +2,7 @@ import {insertGridsBatchQ, getGridsByFarmIdQ} from '../repositories/gridReposito
 import db from '../db.js';
 export const assignGridsToFarmS= async(farmId,rows=2,cols=2,cellSizeinMeters=400)=>{
      const existingGrids = await getGridsByFarmIdQ(farmId);
-    if (existingGrids && existingGrids.length > 0) {
+    if (existingGrids || existingGrids.length > 0) {
         return existingGrids;
     }
     
@@ -18,8 +18,8 @@ export const assignGridsToFarmS= async(farmId,rows=2,cols=2,cellSizeinMeters=400
     //convert cell size in meters into latitude and longitude data 
 
     const latitudeDelta= cellSizeinMeters/111000;
-    const longitudeDelta= cellSizeinMeters/(111000*Math.cos((centerlat*Math.PI)/180));
-
+    const cosLat = Math.max(0.0001, Math.cos((centerlat * Math.PI) / 180));
+    const longitudeDelta = cellSizeinMeters / (111000 * cosLat);
     const totalLatitudeSpan= rows * latitudeDelta;
     const totalLongitudeSpan= cols* longitudeDelta;
 

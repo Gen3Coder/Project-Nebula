@@ -1,5 +1,4 @@
-CREATE DATABASE projectNebula;
-\c projectNebula;
+\c projectnebula;
 
 CREATE TABLE regions (
     id SERIAL PRIMARY KEY,
@@ -10,6 +9,25 @@ CREATE TABLE regions (
     center_longitude DECIMAL(9, 6) NOT NULL CHECK (center_longitude BETWEEN -180 AND 180),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE regional_health_logs (
+    id BIGSERIAL PRIMARY KEY,
+    region_id INTEGER NOT NULL REFERENCES regions(id) ON DELETE CASCADE,
+    crop VARCHAR(50) NOT NULL,
+    temperature DECIMAL(5, 2) NOT NULL,
+    humidity DECIMAL(5, 2) NOT NULL,
+    soil_moisture DECIMAL(5, 2) NOT NULL,
+    rainfall DECIMAL(6, 2) NOT NULL DEFAULT 0.0,
+    vegetation_coverage DECIMAL(5, 2) NOT NULL,
+    ndvi DECIMAL(4, 3) NOT NULL,
+    health_score DECIMAL(5, 2) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    primary_stress_factor VARCHAR(50) DEFAULT 'NONE',
+    recommendation TEXT,
+    recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_regional_health_recent ON regional_health_logs(region_id, recorded_at DESC);
 
 CREATE TABLE false_start (
     id SERIAL PRIMARY KEY,
@@ -78,3 +96,15 @@ CREATE INDEX idx_farms_region ON farms(region_id);
 CREATE INDEX idx_grids_farm ON grids(farm_id);
 CREATE INDEX idx_crop_health_grid_recent ON crop_health_logs(grid_id, recorded_at DESC);
 CREATE INDEX idx_crop_health_status ON crop_health_logs(status);
+
+
+-- Seed initial regions with coordinates and primary crops
+INSERT INTO regions (id, name, primary_crop, climate_zone, center_latitude, center_longitude)
+VALUES 
+  (1, 'Arsi', 'Wheat', 'Highland / Cool Sub-humid', 7.500000, 39.200000),
+  (2, 'Jimma', 'Coffee', 'Highland / Humid Tropical Forest', 7.673400, 36.834400),
+  (3, 'Bale', 'Wheat', 'Highland / Semi-arid Plateau', 6.800000, 40.000000)
+ON CONFLICT (name) DO NOTHING;
+
+-- Reset sequence to continue after id 3
+SELECT setval('regions_id_seq', (SELECT MAX(id) FROM regions));
