@@ -1,0 +1,7 @@
+{
+    "start": "1981-01-01",
+    "end": "2026-11-06",
+    "rows": 16746,
+    "file": "era5_land_arsi.csv",
+    "download_method": "Earth Engine direct CSV"
+}

@@ -1,0 +1,7 @@
+# versions the model was trained with (a joblib file must be loaded with the same scikit-learn)
+scikit-learn==1.9.1
+pandas
+numpy
+joblib
+flask
+gunicorn; sys_platform != "win32"

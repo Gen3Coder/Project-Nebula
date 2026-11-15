@@ -14,7 +14,7 @@ REGIONS = {
 
 BUFFER_M = 25_000            # 25 km buffer around each point
 START_DATE = "1981-01-01"
-END_DATE = "2025-12-31"
+END_DATE = "2026-11-15"
 
 # Your Google Cloud project that is registered for Earth Engine
 GEE_PROJECT = os.environ.get("GEE_PROJECT", "study-ai-partner")
