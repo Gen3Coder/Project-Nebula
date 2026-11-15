@@ -39,7 +39,7 @@ function Header({ page, setPage, language, toggleLanguage, t, currentUser, onLog
           <button
             className={page === 'moderator' ? 'nav-link active' : 'nav-link'}
             onClick={() => setPage('moderator')}
-            style={{ fontWeight: 700, color: 'var(--green)' }}
+            style={{ fontWeight: 700 }}
           >
             <Shield className="nav-icon" size={19} aria-hidden="true" />
             {t.moderatorPanel}
@@ -60,14 +60,14 @@ function Header({ page, setPage, language, toggleLanguage, t, currentUser, onLog
             <span
               style={{
                 fontSize: '0.85rem',
-                color: 'var(--muted)',
+                color: 'var(--ink)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '6px',
               }}
             >
               <User size={15} /> {currentUser.firstName}
-              <small style={{ color: 'var(--green)', fontWeight: 600 }}>({currentUser.role})</small>
+              <small style={{ background: '#f1f3f6', color: '#111111', padding: '2px 8px', borderRadius: '999px', fontWeight: 600, fontSize: '0.75rem' }}>{currentUser.role}</small>
             </span>
             <button
               className="text-button"

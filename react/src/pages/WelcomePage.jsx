@@ -1,7 +1,15 @@
 import { ArrowRight } from 'lucide-react'
 import plantingImage from '../assets/planting.jpg'
 
-function WelcomePage({ setPage, t }) {
+function WelcomePage({ setPage, t, currentUser }) {
+  const handleGoToAccount = () => {
+    if (currentUser) {
+      setPage(currentUser.role === 'moderator' ? 'moderator' : 'dashboard')
+    } else {
+      setPage('auth')
+    }
+  }
+
   return (
     <section className="welcome-page">
       <div
@@ -20,9 +28,9 @@ function WelcomePage({ setPage, t }) {
           <p className="lead">{t.welcomeText}</p>
           <button
             className="primary-button large-button"
-            onClick={() => setPage('location')}
+            onClick={handleGoToAccount}
           >
-            {t.setupFarm}
+            {t.goToAccount || t.setupFarm || 'Go to Account'}
             <ArrowRight size={20} aria-hidden="true" />
           </button>
         </div>

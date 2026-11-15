@@ -9,7 +9,8 @@ const en = {
   welcomeTitle2: "it's time to plant.",
   welcomeText:
     'Check the weather, keep track of your crops, and get information to help you decide when to plant.',
-  setupFarm: "Let's set up your farm",
+  setupFarm: 'Go to Account',
+  goToAccount: 'Go to Account',
   howItWorks: 'How it works',
   chooseCrops: 'Choose your crops',
   chooseCropsText: 'Start with the crops growing on your farm.',

@@ -4,8 +4,10 @@ import {
   CheckCircle2,
   CloudRain,
   Droplets,
+  MessageSquare,
   PlusCircle,
   RefreshCw,
+  Send,
   Shield,
   Sprout,
   Thermometer,
@@ -31,6 +33,34 @@ function ModeratorPage({ t, setPage, currentUser }) {
   const [regLoading, setRegLoading] = useState(false)
   const [regError, setRegError] = useState('')
   const [regSuccess, setRegSuccess] = useState('')
+
+  // SMS Broadcast state
+  const [smsLoading, setSmsLoading] = useState(false)
+  const [smsResult, setSmsResult] = useState(null)
+  const [smsError, setSmsError] = useState('')
+
+  async function handleSendSMS(regionId = null) {
+    setSmsLoading(true)
+    setSmsError('')
+    setSmsResult(null)
+
+    try {
+      const response = await fetch('/api/crops/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(regionId ? { regionId } : {}),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.success || data.data?.success === false) {
+        throw new Error(data.message || data.error || data.data?.errors?.[0]?.error || 'Failed to dispatch SMS')
+      }
+      setSmsResult(data.data || data)
+    } catch (err) {
+      setSmsError(err.message)
+    } finally {
+      setSmsLoading(false)
+    }
+  }
 
   async function fetchSummary() {
     setLoading(true)
@@ -148,6 +178,15 @@ function ModeratorPage({ t, setPage, currentUser }) {
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button
             className="primary-button"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={() => handleSendSMS(null)}
+            disabled={smsLoading}
+          >
+            <Send size={18} />
+            {smsLoading ? 'Sending SMS...' : `Send SMS to All Farmers (${farmers.length})`}
+          </button>
+          <button
+            className="primary-button"
             onClick={() => {
               setShowRegisterForm((prev) => !prev)
               setRegError('')
@@ -164,6 +203,36 @@ function ModeratorPage({ t, setPage, currentUser }) {
           </button>
         </div>
       </div>
+
+      {/* SMS Status Banners */}
+      {smsResult && (
+        <div
+          className="notice-message"
+          style={{
+            color: '#15803d',
+            borderColor: '#bbf7d0',
+            marginBottom: '1.5rem',
+            background: '#f0fdf4',
+          }}
+        >
+          <CheckCircle2 size={18} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
+          <strong>SMS Sent Successfully!</strong> Dispatched crop health reports to {smsResult.sentCount ?? farmers.length} farmers with personalized greetings (&quot;Greetings [Name], crop health report...&quot;) and Amharic recommendations.
+        </div>
+      )}
+
+      {smsError && (
+        <div
+          className="notice-message"
+          style={{
+            color: '#b91c1c',
+            borderColor: '#fecaca',
+            marginBottom: '1.5rem',
+            background: '#fef2f2',
+          }}
+        >
+          <strong>SMS Dispatch Alert:</strong> {smsError}
+        </div>
+      )}
 
       {/* Register Farmer Form (Toggled by Moderator) */}
       {showRegisterForm && (
@@ -368,7 +437,7 @@ function ModeratorPage({ t, setPage, currentUser }) {
                     borderRadius: 'var(--radius-sm)',
                     background: 'var(--card-muted)',
                     fontSize: '0.85rem',
-                    borderLeft: `3px solid ${statusTone === 'critical' ? '#ff6b6b' : statusTone === 'warning' ? '#f59f00' : 'var(--green)'}`,
+                    borderLeft: `3px solid ${statusTone === 'critical' ? '#dc2626' : statusTone === 'warning' ? '#d97706' : '#16a34a'}`,
                   }}
                 >
                   <strong style={{ display: 'block', marginBottom: '0.25rem' }}>Agronomic Recommendation:</strong>
@@ -379,6 +448,45 @@ function ModeratorPage({ t, setPage, currentUser }) {
           })}
         </div>
       )}
+
+      {/* SMS Broadcast Action Card */}
+      <div
+        className="crop-summary-card"
+        style={{
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          background: '#ffffff',
+          border: '1px solid var(--line)',
+          padding: '1.25rem 1.5rem',
+        }}
+      >
+        <div>
+          <h2 style={{ fontSize: '1.25rem', margin: '0 0 0.35rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MessageSquare size={22} style={{ color: '#111111' }} />
+            Crop Health SMS Service
+          </h2>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>
+            Broadcasts instant crop health updates to all {farmers.length} enrolled farmers via AfroMessage with personalized greetings in Amharic:
+            <br />
+            <em style={{ color: 'var(--ink)', fontSize: '0.85rem' }}>
+              &quot;Greetings [Name], crop health report: [Amharic recommendation]&quot;
+            </em>
+          </p>
+        </div>
+        <button
+          className="primary-button"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          onClick={() => handleSendSMS(null)}
+          disabled={smsLoading || farmers.length === 0}
+        >
+          <Send size={18} />
+          {smsLoading ? 'Sending SMS Broadcast...' : `Send SMS to All Farmers (${farmers.length})`}
+        </button>
+      </div>
 
       {/* Enrolled Farmers Table / List */}
       <div>

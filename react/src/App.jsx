@@ -324,7 +324,9 @@ function App() {
       />
 
       <main className="main-content">
-        {page === 'welcome' && <WelcomePage setPage={setPage} t={t} />}
+        {page === 'welcome' && (
+          <WelcomePage setPage={setPage} t={t} currentUser={currentUser} />
+        )}
 
         {page === 'auth' && (
           <AuthPage

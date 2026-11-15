@@ -201,7 +201,7 @@ function AuthPage({ t, onAuthSuccess, setPage, defaultMode = 'login' }) {
           </div>
 
           {errorMsg && (
-            <p className="notice-message" style={{ color: '#ff6b6b', borderColor: '#ff6b6b' }} role="alert">
+            <p className="notice-message" style={{ color: '#b91c1c', borderColor: '#fecaca', background: '#fef2f2' }} role="alert">
               {errorMsg}
             </p>
           )}
@@ -302,13 +302,13 @@ function AuthPage({ t, onAuthSuccess, setPage, defaultMode = 'login' }) {
           </div>
 
           {errorMsg && (
-            <p className="notice-message" style={{ color: '#ff6b6b', borderColor: '#ff6b6b' }} role="alert">
+            <p className="notice-message" style={{ color: '#b91c1c', borderColor: '#fecaca', background: '#fef2f2' }} role="alert">
               {errorMsg}
             </p>
           )}
 
           {successMsg && (
-            <p className="notice-message" style={{ color: 'var(--green)', borderColor: 'var(--green)' }}>
+            <p className="notice-message" style={{ color: '#15803d', borderColor: '#bbf7d0', background: '#f0fdf4' }}>
               <CheckCircle2 size={16} style={{ display: 'inline', marginRight: '6px' }} />
               {successMsg}
             </p>

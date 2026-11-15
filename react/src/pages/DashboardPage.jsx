@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import {
+  CheckCircle2,
   Clock3,
   CloudRain,
   Coffee,
   Info,
   MapPin,
+  MessageSquare,
   RefreshCw,
+  Send,
   Sprout,
   Wheat,
 } from 'lucide-react'
@@ -38,6 +42,32 @@ function DashboardPage({
   getMetricInterpretation,
   dateLocale,
 }) {
+  const [smsSending, setSmsSending] = useState(false)
+  const [smsFeedback, setSmsFeedback] = useState('')
+  const [smsError, setSmsError] = useState('')
+
+  async function handleSendFarmerSMS() {
+    setSmsSending(true)
+    setSmsFeedback('')
+    setSmsError('')
+    try {
+      const res = await fetch('/api/crops/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success || data.data?.success === false) {
+        throw new Error(data.message || data.error || data.data?.errors?.[0]?.error || 'Failed to send SMS')
+      }
+      setSmsFeedback('Crop health report SMS dispatched to registered farmers!')
+    } catch (err) {
+      setSmsError(err.message)
+    } finally {
+      setSmsSending(false)
+    }
+  }
+
   const farmerGreeting = currentUser?.firstName
     ? `${t.helloFarmer.replace(/!$/, '')} ${currentUser.firstName}!`
     : t.helloFarmer
@@ -192,18 +222,69 @@ function DashboardPage({
               )}
 
               {crop.recommendation && (
-                <div className="guidance-card" style={{ marginBottom: '1rem' }}>
-                  <span className="guidance-icon">
-                    {activeCrop === 'Coffee' ? (
-                      <Coffee size={22} aria-hidden="true" />
-                    ) : (
-                      <Sprout size={22} aria-hidden="true" />
-                    )}
-                  </span>
-                  <div>
-                    <h3>{t.recommendation || 'Recommendation'}</h3>
-                    <p>{crop.recommendation}</p>
+                <div
+                  className="guidance-card"
+                  style={{
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <span className="guidance-icon">
+                      {activeCrop === 'Coffee' ? (
+                        <Coffee size={22} aria-hidden="true" />
+                      ) : (
+                        <Sprout size={22} aria-hidden="true" />
+                      )}
+                    </span>
+                    <div>
+                      <h3>{t.recommendation || 'Recommendation'}</h3>
+                      <p>{crop.recommendation}</p>
+                    </div>
                   </div>
+
+                  <button
+                    className="secondary-button"
+                    style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onClick={handleSendFarmerSMS}
+                    disabled={smsSending}
+                  >
+                    <Send size={16} />
+                    {smsSending ? 'Sending SMS...' : 'Send SMS Report'}
+                  </button>
+                </div>
+              )}
+
+              {smsFeedback && (
+                <div
+                  className="notice-message"
+                  style={{
+                    color: '#15803d',
+                    borderColor: '#bbf7d0',
+                    marginBottom: '1rem',
+                    background: '#f0fdf4',
+                  }}
+                >
+                  <CheckCircle2 size={16} style={{ display: 'inline', marginRight: '6px' }} />
+                  {smsFeedback}
+                </div>
+              )}
+
+              {smsError && (
+                <div
+                  className="notice-message"
+                  style={{
+                    color: '#b91c1c',
+                    borderColor: '#fecaca',
+                    marginBottom: '1rem',
+                    background: '#fef2f2',
+                  }}
+                >
+                  {smsError}
                 </div>
               )}
 

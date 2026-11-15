@@ -4,6 +4,10 @@
 @import '@fontsource/noto-sans-ethiopic/ethiopic-700.css';
 @import '@fontsource/noto-sans-ethiopic/ethiopic-800.css';
 
+* {
+  font-family: 'Times New Roman', Times, serif, 'Noto Sans Ethiopic', Nyala;
+}
+
 p {
   margin: 0;
 }

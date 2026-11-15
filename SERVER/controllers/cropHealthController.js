@@ -4,6 +4,10 @@ import {
   getRecentRainfallHistoryQ,
 } from '../repositories/regionalCropHealthRepository.js';
 import { resolveRegionId } from '../services/APIServices.js';
+import {
+  sendCropHealthSMSToAllFarmers,
+  sendRegionalCropHealthSMS,
+} from '../services/smsService.js';
 
 /**
  * Controller: GET /api/mock/crops/:id/health  (Or /api/crops/health)
@@ -84,6 +88,45 @@ export const getRegionalHistoryC = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to retrieve regional health history',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Controller: POST /api/crops/send-sms or /api/moderator/send-sms
+ * Dispatches crop health report SMS to enrolled farmers
+ */
+export const sendCropHealthSMSC = async (req, res) => {
+  try {
+    const regionId = req.body?.regionId || req.query?.regionId;
+    let result;
+
+    if (regionId) {
+      result = await sendRegionalCropHealthSMS(Number(regionId));
+    } else {
+      result = await sendCropHealthSMSToAllFarmers();
+    }
+
+    if (!result.success) {
+      const firstError = result.errors?.[0]?.error || 'Failed to dispatch SMS';
+      return res.status(400).json({
+        success: false,
+        message: firstError,
+        data: result,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Crop health SMS broadcast sent successfully',
+      data: result,
+    });
+  } catch (error) {
+    console.error('Error in sendCropHealthSMSC:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to send crop health SMS broadcast',
       error: error.message,
     });
   }

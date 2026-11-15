@@ -9,7 +9,8 @@ const am = {
   welcomeTitle2: 'እንደሚገባ ይወቁ።',
   welcomeText:
     'የአየር ሁኔታንና የሰብልዎን ሁኔታ ይከታተሉ። መቼ መዝራት እንደሚሻል ለመወሰን የሚረዳዎትን መረጃ ያግኙ።',
-  setupFarm: 'እርሻዎን እናዘጋጅ',
+  setupFarm: 'ወደ መለያ ይሂዱ',
+  goToAccount: 'ወደ መለያ ይሂዱ',
   howItWorks: 'እንዴት ይሰራል?',
   chooseCrops: 'ሰብሎችዎን ይምረጡ',
   chooseCropsText: 'በእርሻዎ ላይ የሚያመርቷቸውን ሰብሎች ይምረጡ።',
