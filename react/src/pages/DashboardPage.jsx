@@ -186,6 +186,18 @@ function DashboardPage({
                 </div>
               )}
 
+              {crop.recommendation && (
+                <div className="guidance-card" style={{ marginBottom: '1rem' }}>
+                  <span className="guidance-icon">
+                    <Sprout size={22} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3>{t.recommendation || 'Recommendation'}</h3>
+                    <p>{crop.recommendation}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="section-heading">
                 <div>
                   <h2>{t.wheatReadings}</h2>

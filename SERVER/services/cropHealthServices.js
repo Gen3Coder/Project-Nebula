@@ -1,7 +1,7 @@
 import {findDyingGridsByFarmQ,insertHealthLogQ,readingsForGridsOnFarmQ} from '../repositories/cropHealthRepository.js';
 import { getGridsByFarmIdQ } from '../repositories/gridRepository.js';
 import { fetchAPIDataS } from './APIServices.js';
-import { evaluateCropHealthRules } from './cropHealthAssesmentService.js';
+import { evaluateCropHealthRules } from './cropHealthRegionalAssesmentService.js';
 
 // Gets the latest database readings for all grids on a farm.
  

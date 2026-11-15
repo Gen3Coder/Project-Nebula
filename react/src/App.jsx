@@ -9,7 +9,7 @@ import DashboardPage from './pages/DashboardPage'
 import GuidancePage from './pages/GuidancePage'
 import translations from './locales'
 import {
-  API_URL,
+  buildCropHealthURL,
   sampleRainfall,
   sampleDrySpellRisk,
   sampleRainfallReference,
@@ -77,7 +77,11 @@ function App() {
       setError(false)
 
       try {
-        const response = await fetch(API_URL)
+        const url = buildCropHealthURL(
+          farmLocation.region || 'Arsi',
+          farmLocation.cropType || 'Wheat'
+        )
+        const response = await fetch(url)
 
         if (!response.ok) {
           throw new Error('Request failed')
@@ -102,7 +106,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [page, activeCrop, refreshKey])
+  }, [page, activeCrop, refreshKey, farmLocation.region, farmLocation.cropType])
 
   function updateLocation(field, value) {
     setFarmLocation((previous) => ({

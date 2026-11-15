@@ -1,4 +1,4 @@
-import { pool } from '../Config/db.js';
+import { pool } from '../db.js';
 
 // INSERT CROP HEALTH log from FASTAPI
 export const insertHealthLogQ = async ({

@@ -90,6 +90,7 @@ const en = {
   criticalTitle: 'This reading needs a closer look',
   criticalText:
     'The sample API reports a critical status. Because this is test data and the measurement units and thresholds are not confirmed, check the data before making farm decisions.',
+  recommendation: 'Recommendation',
   loadingTitle: 'Getting your crop information',
   loadingText:
     'Please wait while Nebula requests the latest available data.',

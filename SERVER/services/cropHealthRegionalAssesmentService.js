@@ -1,5 +1,5 @@
 import { fetchAPIDataS } from './APIServices.js';
-import { insertRegionalHealthLogQ } from '../repositories/regionalHealthRepository.js';
+import { insertRegionalHealthLogQ } from '../repositories/regionalCropHealthRepository.js';
 // Default crops for each zone
 const REGION_CROPS = {
   Arsi: 'WHEAT',

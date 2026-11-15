@@ -1,4 +1,4 @@
-import db from '../db.js';
+import {pool} from '../db.js';
 
 export const insertGridsBatchQ = async (grids) => {
 
@@ -40,7 +40,7 @@ export const insertGridsBatchQ = async (grids) => {
   `;
 
   try {
-    const result = await db.query(query, values);
+    const result = await pool.query(query, values);
     return result.rows;
   } catch (error) {
     console.error('Error batch inserting grids:', error.message);

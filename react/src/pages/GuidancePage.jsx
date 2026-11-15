@@ -19,6 +19,11 @@ function GuidancePage({ t, activeCrop, crop, setPage }) {
             <p>
               {t.wheatGuidance} "{crop.status}".
             </p>
+            {crop.recommendation && (
+              <p style={{ fontWeight: 600, marginTop: '0.5rem' }}>
+                {crop.recommendation}
+              </p>
+            )}
             <p>{t.wheatGuidance2}</p>
             <p>{t.wheatGuidance3}</p>
           </div>

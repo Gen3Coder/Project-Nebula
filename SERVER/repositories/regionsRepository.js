@@ -1,4 +1,4 @@
-import { pool } from '../Config/db.js';
+import { pool } from '../db.js';
 
 export const allRegionsQ = async () => {
   const query = `SELECT id, name, crop, climate_zone, center_latitude, center_longitude FROM regions ORDER BY id ASC;`;

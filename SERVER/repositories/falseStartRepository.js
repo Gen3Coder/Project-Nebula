@@ -1,4 +1,4 @@
-import { pool } from '../Config/db.js';
+import { pool } from '../db.js';
 
 //Getting the Latest False start Check for One of the Regions
 export const latestFalseStartByRegionQ = async (region_id) => {
