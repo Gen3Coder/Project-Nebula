@@ -1,27 +1,4 @@
-"""
-RainGuard Ethiopia
-==================
-One file, two jobs:
 
-  1) BUILD the data (run once, then any time you want to update):
-         python main.py build            # everything
-         python main.py build rain       # only rainfall (GPM IMERG)
-         python main.py build power      # temperature, humidity, soil moisture
-         python main.py build ndvi       # vegetation (MODIS)
-         python main.py build elevation  # elevation (SRTM)
-     Every build step is resumable: re-running only fetches what is missing.
-
-  2) SERVE the API:
-         uvicorn main:app --reload
-     Docs at http://127.0.0.1:8000/docs
-
-Install:
-    pip install fastapi uvicorn requests pandas numpy earthaccess xarray h5netcdf
-(earthaccess / xarray / h5netcdf are only needed for `build rain`.)
-
-Data is written to ./data/ . Set AUTO_REFRESH=1 to rebuild automatically
-every 24 h while the API is running.
-"""
 import json
 import os
 import shutil
@@ -38,18 +15,17 @@ import pandas as pd
 import requests
 from fastapi import FastAPI, HTTPException
 
-socket.setdefaulttimeout(90)   # a stalled connection fails after 90 s instead of hanging
+socket.setdefaulttimeout(90)  
 
-# --------------------------------------------------------------------------
-# Config
-# --------------------------------------------------------------------------
+
+
 zones = {
     "Arsi":      {"lat": 7.958243,  "lon": 39.124205},
     "Bale,Robe": {"lat": 7.1242676, "lon": 40.0080973},
     "Jimma":     {"lat": 7.67783,   "lon": 36.833164},
 }
 
-# Vegetation (NDVI) is OFF for now. To turn it on later: set the environment variable ENABLE_NDVI=1
+
 ENABLE_NDVI = os.getenv("ENABLE_NDVI") == "1"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -64,9 +40,9 @@ F_ELEV = f"{DATA_DIR}/elevation.json"
 POWER_PARAMS = ["T2M", "T2M_MAX", "T2M_MIN", "RH2M", "GWETTOP", "GWETROOT", "GWETPROF"]
 POWER_FIRST = "2000-01-01"
 RAIN_MONTHLY_FIRST = "2000-01-01"
-RAIN_DAILY_FIRST = "2000-06-01"      # IMERG daily starts here
+RAIN_DAILY_FIRST = "2000-06-01"      
 NDVI_FIRST = "2000-01-01"
-NDVI_CHUNK = int(os.getenv("NDVI_CHUNK", "3"))   # composites per MODIS request (3 is known to work)
+NDVI_CHUNK = int(os.getenv("NDVI_CHUNK", "3"))   
 
 MODIS = "https://modis.ornl.gov/rst/api/v1"
 MODIS_HEADERS = {"Accept": "application/json"}
@@ -110,9 +86,9 @@ def save_csv(df, path, tries=5):
         f"(your new data is kept in {tmp}).")
 
 
-# --------------------------------------------------------------------------
+
 # NASA POWER (temperature, humidity, soil wetness)
-# --------------------------------------------------------------------------
+
 def get_power(lat, lon, params, start, end, tries=4, timeout=60):
     """start/end as YYYYMMDD. Returns a DataFrame indexed by date."""
     d = http_json(
@@ -173,9 +149,8 @@ def build_power():
         print("POWER already up to date")
 
 
-# --------------------------------------------------------------------------
 # MODIS NDVI (vegetation)
-# --------------------------------------------------------------------------
+
 def modis_get(path, params, tries=4, backoff=5, timeout=(15, 90)):
     return http_json(f"{MODIS}/{path}", params, tries=tries, headers=MODIS_HEADERS,
                      backoff=backoff, timeout=timeout)
@@ -238,7 +213,7 @@ def build_ndvi():
                 "band": "250m_16_days_NDVI",
                 "startDate": chunk[0]["modis_date"], "endDate": chunk[-1]["modis_date"],
                 "kmAboveBelow": 1, "kmLeftRight": 1,
-            }, tries=5, backoff=20)               # waits 20,40,60,80,100 s between tries
+            }, tries=5, backoff=20)               
             if s_ is None:
                 fails += 1
                 print(f"  chunk at {chunk[0]['calendar_date']} failed ({fails}/5 in a row)")
@@ -259,14 +234,14 @@ def build_ndvi():
                 print(f"  {name}: {min(i + NDVI_CHUNK, len(dates))}/{len(dates)} (up to {chunk[-1]['calendar_date']})")
                 _save_ndvi_rows(rows)
                 rows = []
-            time.sleep(2)                          # be gentle with the server
+            time.sleep(2)                       
         _save_ndvi_rows(rows)
         print(f"NDVI {name}: done")
 
 
-# --------------------------------------------------------------------------
-# SRTM elevation (via the OpenTopoData public API, SRTM 30 m)
-# --------------------------------------------------------------------------
+
+# SRTM elevation
+
 def build_elevation(half_width_deg=0.2, n=9):
     """Point elevation + min/max/mean over a ~45 km square around each zone."""
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -289,16 +264,14 @@ def build_elevation(half_width_deg=0.2, n=9):
             "source": "SRTM 30 m (via OpenTopoData)",
         }
         print("elevation", name, out[name]["point_m"], "m")
-        time.sleep(1.2)                      # public API: max 1 request/second
+        time.sleep(1.2)                     
     if out:
         with open(F_ELEV, "w", encoding="utf-8") as f:
             json.dump(out, f, indent=2)
         print("elevation saved")
 
 
-# --------------------------------------------------------------------------
-# GPM IMERG rainfall (download -> extract the 3 points -> delete the file)
-# --------------------------------------------------------------------------
+# GPM IMERG rainfall 
 def _open_precip(path):
     """Monthly IMERG files keep data in group 'Grid'; daily files keep it at the top level."""
     import xarray as xr
@@ -337,7 +310,7 @@ def _earth_login():
     if _logged_in:
         return
     import earthaccess
-    auth = earthaccess.login(persist=True)      # asks once, then remembers (~/.netrc)
+    auth = earthaccess.login(persist=True)      
     if not getattr(auth, "authenticated", True):
         raise RuntimeError("Earthdata login failed")
     _logged_in = True
@@ -418,24 +391,23 @@ def _build_rain_product(short_name, first, out_csv, value_col, post=None):
         cur = cur.drop_duplicates(["date", "zone"]).sort_values(["zone", "date"])
         if post:
             cur = post(cur)
-        save_csv(cur, out_csv)                       # checkpoint after every batch
+        save_csv(cur, out_csv)                       
         print(f"{short_name}: {done}/{total} saved through {cur['date'].max()}")
 
 
 def _monthly_post(df):
     df = df.copy()
     days = pd.to_datetime(df["date"]).dt.days_in_month
-    df["rain_mm_month"] = df["precip_mm_hr"] * days * 24      # raw monthly value is mm/hr
+    df["rain_mm_month"] = df["precip_mm_hr"] * days * 24      
     return df
 
 
 def build_rain():
-    # 1) Final Run daily (accurate, lags a few months)
+
     _build_rain_product("GPM_3IMERGDF", RAIN_DAILY_FIRST, F_RAIN_DAILY, "rain_mm_day")
-    # 2) Final Run monthly
+    
     _build_rain_product("GPM_3IMERGM", RAIN_MONTHLY_FIRST, F_RAIN_MONTHLY,
                         "precip_mm_hr", post=_monthly_post)
-    # 3) Late Run daily: only the days after the Final Run ends (rebuilt each time)
     if os.path.exists(F_RAIN_DAILY):
         last_final = pd.read_csv(F_RAIN_DAILY)["date"].max()
         start = (pd.Timestamp(last_final) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
@@ -457,14 +429,12 @@ def build_all():
             print(f"{step.__name__} failed: {type(e).__name__}: {e}")
 
 
-# --------------------------------------------------------------------------
 # API
-# --------------------------------------------------------------------------
+
 POWER_TTL = 60 * 60          # re-check NASA POWER at most every hour
 NDVI_TTL = 12 * 60 * 60      # re-check MODIS at most every 12 hours
-_cache = {}                  # live-call cache
-_tables = {}                 # csv cache keyed by file, reloaded when the file changes
-
+_cache = {}                
+_tables = {}                
 
 FAIL_TTL = 5 * 60            # after a failed live call, do not retry for 5 minutes
 _failed = {}
@@ -551,7 +521,7 @@ def latest_weather(zone):
 
 def latest_ndvi(zone):
     p = check_zone(zone)
-    t = _table("ndvi")                      # saved file first: fast and consistent
+    t = _table("ndvi")                      
     if t is not None:
         sub = t[t["zone"] == zone].sort_values("date")
         if len(sub):
@@ -580,8 +550,8 @@ def latest_rain(zone):
     return {
         "zone": zone, "date": last["date"],
         "value": round(float(last["rain_mm_day"]), 2), "unit": "mm/day",
-        "source": last["source"],       # final = gauge-calibrated, late = provisional
-        "age_days": int((pd.Timestamp(utc_today()) - end).days),   # how old the newest rainfall value is
+        "source": last["source"],       
+        "age_days": int((pd.Timestamp(utc_today()) - end).days),   
         "last_7_days_mm": round(float(sub.loc[d > end - pd.Timedelta(days=7), "rain_mm_day"].sum()), 1),
         "last_30_days_mm": round(float(sub.loc[d > end - pd.Timedelta(days=30), "rain_mm_day"].sum()), 1),
     }
@@ -614,8 +584,7 @@ async def lifespan(app):
 
 app = FastAPI(title="RainGuard Ethiopia", lifespan=lifespan)
 
-# Let a browser frontend (your teammates' app) call this API from another domain.
-from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET"], allow_headers=["*"])
 
 
@@ -723,7 +692,7 @@ def history(zone: str, variable: str, start: str = "2000-01-01",
             "data": sub.to_dict(orient="records")}
 
 
-# --------------------------------------------------------------------------
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     if not args or args[0] != "build":
