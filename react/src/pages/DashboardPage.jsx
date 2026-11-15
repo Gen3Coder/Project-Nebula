@@ -51,10 +51,11 @@ function DashboardPage({
     setSmsFeedback('')
     setSmsError('')
     try {
+      const regionParam = crop?.region || currentUser?.region
       const res = await fetch('/api/crops/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify(regionParam ? { regionId: regionParam } : {}),
       })
       const data = await res.json()
       if (!res.ok || !data.success || data.data?.success === false) {

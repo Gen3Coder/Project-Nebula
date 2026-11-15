@@ -63,13 +63,80 @@ export const normalizePhoneNumber = (phone) => {
 };
 
 /**
- * Formats personalized SMS with the farmer's name, crop health label, and Amharic text.
- * Pattern: "Greetings [Name], crop health report then the amharic text"
+ * Formats personalized SMS with the farmer's name, crop, region,
+ * core telemetry data (Soil moisture, Temperature, Humidity, Rainfall),
+ * and agronomic optimization recommendation (in English and Amharic).
  */
-export const formatFarmerSMS = (farmerName, crop, amharicText) => {
-  const displayName = (farmerName || 'Farmer').trim();
-  const cropPrefix = crop ? `${crop} ` : '';
-  return `Greetings ${displayName}, ${cropPrefix}crop health report:\n${amharicText}`;
+export const formatFarmerSMS = (arg1, arg2, arg3, arg4) => {
+  let farmerName = 'Farmer';
+  let crop = 'Wheat';
+  let region = '';
+  let metrics = {};
+  let diagnosis = {};
+  let amharicText = '';
+  let recommendation = '';
+
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    farmerName = arg1.farmerName || arg1.name || 'Farmer';
+    crop = arg1.crop || 'Wheat';
+    region = arg1.region || '';
+    metrics = arg1.metrics || {};
+    diagnosis = arg1.diagnosis || {};
+    amharicText = arg1.amharicText || '';
+    recommendation = arg1.recommendation || diagnosis.recommendation || '';
+  } else {
+    farmerName = arg1 || 'Farmer';
+    crop = arg2 || 'Wheat';
+    amharicText = arg3 || '';
+    if (typeof arg4 === 'object' && arg4 !== null) {
+      region = arg4.region || '';
+      metrics = arg4.metrics || {};
+      diagnosis = arg4.diagnosis || {};
+      recommendation = arg4.recommendation || diagnosis.recommendation || '';
+    }
+  }
+
+  const displayName = String(farmerName).trim();
+  const cropName = String(crop).trim();
+  const regionLabel = region ? ` (${region})` : '';
+
+  // Extract core metrics
+  const soil = metrics.soil_moisture ?? metrics.soilMoisture;
+  const temp = metrics.temperature ?? metrics.temprature;
+  const hum = metrics.humidity;
+  const rain = metrics.rainfall ?? metrics.rainFall;
+  const rain7d = metrics.rainfall_7d ?? metrics.rainfall7d;
+  const status = diagnosis.status ? String(diagnosis.status).toUpperCase() : 'HEALTHY';
+  const score = diagnosis.healthScore ?? diagnosis.score;
+
+  // Build telemetry lines
+  const dataParts = [];
+  if (soil !== undefined && soil !== null) dataParts.push(`Soil: ${soil}%`);
+  if (temp !== undefined && temp !== null) dataParts.push(`Temp: ${temp}°C`);
+  if (hum !== undefined && hum !== null) dataParts.push(`Humidity: ${hum}%`);
+  if (rain !== undefined && rain !== null) dataParts.push(`Rain: ${rain}mm`);
+  if (rain7d !== undefined && rain7d !== null && Number(rain7d) > 0) dataParts.push(`7d Rain: ${rain7d}mm`);
+
+  const optMsg = recommendation || diagnosis.recommendation;
+
+  const sections = [
+    `Greetings ${displayName}, ${cropName} Crop Health Report${regionLabel}:`,
+    `Status: ${status}${score !== undefined ? ` (${score}/100)` : ''}`,
+  ];
+
+  if (dataParts.length > 0) {
+    sections.push(`Core Data: ${dataParts.join(' | ')}`);
+  }
+
+  if (optMsg) {
+    sections.push(`Optimization: ${optMsg}`);
+  }
+
+  if (amharicText) {
+    sections.push(`የእርሻ ምክር: ${amharicText}`);
+  }
+
+  return sections.join('\n');
 };
 
 /**
@@ -159,6 +226,7 @@ export const sendCropHealthSMSToAllFarmers = async () => {
         AMHARIC_RECOMMENDATIONS[crop]?.['NONE'];
 
       regionDiagnostics[regName.toLowerCase()] = {
+        region: regName,
         crop: crop === 'COFFEE' ? 'Coffee' : 'Wheat',
         rawCrop: crop,
         metrics,
@@ -181,7 +249,15 @@ export const sendCropHealthSMSToAllFarmers = async () => {
       const diag = regionDiagnostics[regKey] || regionDiagnostics['arsi'];
       const farmerName = farmer.first_name || (farmer.name ? farmer.name.split(' ')[0] : 'Farmer');
 
-      const message = formatFarmerSMS(farmerName, diag?.crop || 'Wheat', diag?.amharicText);
+      const message = formatFarmerSMS({
+        farmerName,
+        crop: diag?.crop || 'Wheat',
+        region: farmer.region_name || farmer.region || diag?.region || 'Arsi',
+        metrics: diag?.metrics || {},
+        diagnosis: diag?.diagnosis || {},
+        recommendation: diag?.diagnosis?.recommendation || '',
+        amharicText: diag?.amharicText || '',
+      });
 
       // Call AfroMessage API for this recipient
       const res = await sendAfroSMS({
@@ -249,7 +325,15 @@ export const sendRegionalCropHealthSMS = async (regionId) => {
     try {
       const normalizedPhone = normalizePhoneNumber(farmer.phone || farmer.owner_phone_number);
       const farmerName = farmer.first_name || (farmer.name ? farmer.name.split(' ')[0] : 'Farmer');
-      const message = formatFarmerSMS(farmerName, region.name, amharicText);
+      const message = formatFarmerSMS({
+        farmerName,
+        crop: crop === 'COFFEE' ? 'Coffee' : 'Wheat',
+        region: region.name,
+        metrics,
+        diagnosis,
+        recommendation: diagnosis.recommendation,
+        amharicText,
+      });
 
       const res = await sendAfroSMS({
         to: normalizedPhone,

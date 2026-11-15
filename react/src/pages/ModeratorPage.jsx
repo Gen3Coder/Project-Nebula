@@ -216,7 +216,7 @@ function ModeratorPage({ t, setPage, currentUser }) {
           }}
         >
           <CheckCircle2 size={18} style={{ display: 'inline', marginRight: '6px', verticalAlign: 'text-bottom' }} />
-          <strong>SMS Sent Successfully!</strong> Dispatched crop health reports to {smsResult.sentCount ?? farmers.length} farmers with personalized greetings (&quot;Greetings [Name], crop health report...&quot;) and Amharic recommendations.
+          <strong>SMS Sent Successfully!</strong> Dispatched crop health reports to {smsResult.sentCount ?? farmers.length} farmers with personalized greetings, core telemetry, and agronomic optimization recommendations.
         </div>
       )}
 
@@ -470,10 +470,10 @@ function ModeratorPage({ t, setPage, currentUser }) {
             Crop Health SMS Service
           </h2>
           <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>
-            Broadcasts instant crop health updates to all {farmers.length} enrolled farmers via AfroMessage with personalized greetings in Amharic:
+            Broadcasts instant crop health updates to all {farmers.length} enrolled farmers via AfroMessage with personalized greetings, core telemetry data (Soil, Temp, Humidity, Rain), and optimization recommendations:
             <br />
             <em style={{ color: 'var(--ink)', fontSize: '0.85rem' }}>
-              &quot;Greetings [Name], crop health report: [Amharic recommendation]&quot;
+              &quot;Greetings [Name], [Crop] Crop Health Report: Status | Core Data (Soil, Temp, Humidity, Rain) | Optimization: [Advice] | የእርሻ ምክር: [Amharic]&quot;
             </em>
           </p>
         </div>

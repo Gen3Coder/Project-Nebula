@@ -103,7 +103,7 @@ export const sendCropHealthSMSC = async (req, res) => {
     let result;
 
     if (regionId) {
-      result = await sendRegionalCropHealthSMS(Number(regionId));
+      result = await sendRegionalCropHealthSMS(resolveRegionId(regionId));
     } else {
       result = await sendCropHealthSMSToAllFarmers();
     }
