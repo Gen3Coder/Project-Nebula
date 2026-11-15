@@ -7,10 +7,7 @@
 
 \c projectnebula;
 
--- ----------------------------------------------------------------------------
--- 1. REGIONS
--- High-level Ethiopian agro-ecological zones with representative coordinates
--- ----------------------------------------------------------------------------
+-- REGIONS
 CREATE TABLE IF NOT EXISTS regions (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,         
@@ -23,11 +20,7 @@ CREATE TABLE IF NOT EXISTS regions (
 
 CREATE INDEX IF NOT EXISTS idx_regions_name ON regions(name);
 
--- ----------------------------------------------------------------------------
--- 2. USERS & AUTHENTICATION
--- Multi-role authentication framework for 'farmer' and 'moderator'
--- Supports 16-digit Ethiopian Fayda national ID and phone-based logins
--- ----------------------------------------------------------------------------
+--USERS & AUTHENTICATION
 CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
@@ -50,10 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_users_fayda ON users(fayda_id);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_region ON users(region);
 
--- ----------------------------------------------------------------------------
--- 3. REGIONAL HEALTH LOGS (Primary Area-Level Telemetry)
--- Fast live telemetry logs evaluated from API / satellite data
--- ----------------------------------------------------------------------------
+-- REGIONAL HEALTH LOGS (Primary Area-Level Telemetry)
 CREATE TABLE IF NOT EXISTS regional_health_logs (
     id BIGSERIAL PRIMARY KEY,
     region_id INTEGER NOT NULL REFERENCES regions(id) ON DELETE CASCADE,
@@ -74,10 +64,8 @@ CREATE TABLE IF NOT EXISTS regional_health_logs (
 CREATE INDEX IF NOT EXISTS idx_regional_health_recent ON regional_health_logs(region_id, recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_regional_health_crop ON regional_health_logs(crop);
 
--- ----------------------------------------------------------------------------
--- 4. FALSE START LOGS
--- Early planting season false-start risk evaluations (Belg/Kiremt seasons)
--- ----------------------------------------------------------------------------
+-- FALSE START LOGS
+
 CREATE TABLE IF NOT EXISTS false_start (
     id SERIAL PRIMARY KEY,
     region_id INTEGER NOT NULL REFERENCES regions(id) ON DELETE CASCADE,
@@ -92,10 +80,9 @@ CREATE TABLE IF NOT EXISTS false_start (
 
 CREATE INDEX IF NOT EXISTS idx_false_start_region_recent ON false_start(region_id, assessed_at DESC);
 
--- ----------------------------------------------------------------------------
--- 5. FARMS
--- Individual farmer plots registered within a designated region
--- ----------------------------------------------------------------------------
+
+-- FARMS
+
 CREATE TABLE IF NOT EXISTS farms (
     id SERIAL PRIMARY KEY,
     region_id INTEGER NOT NULL REFERENCES regions(id) ON DELETE CASCADE,
@@ -113,10 +100,7 @@ ALTER TABLE farms ADD COLUMN IF NOT EXISTS farmer_id INTEGER REFERENCES users(us
 CREATE INDEX IF NOT EXISTS idx_farms_region ON farms(region_id);
 CREATE INDEX IF NOT EXISTS idx_farms_farmer ON farms(farmer_id);
 
--- ----------------------------------------------------------------------------
--- 6. GRIDS (Sub-Farm 100m x 100m Resolution Cells)
--- Prepared for high-resolution satellite raster pipelines
--- ----------------------------------------------------------------------------
+-- GRIDS (Sub-Farm 100m x 100m Resolution Cells)
 CREATE TABLE IF NOT EXISTS grids (
     id SERIAL PRIMARY KEY,
     farm_id INTEGER NOT NULL REFERENCES farms(id) ON DELETE CASCADE,
@@ -132,10 +116,7 @@ CREATE TABLE IF NOT EXISTS grids (
 CREATE INDEX IF NOT EXISTS idx_grids_farm ON grids(farm_id);
 CREATE INDEX IF NOT EXISTS idx_grids_code ON grids(grid_code);
 
--- ----------------------------------------------------------------------------
--- 7. CROP HEALTH LOGS (Grid-Level Telemetry)
--- Deep telemetry stored per sub-grid cell
--- ----------------------------------------------------------------------------
+-- CROP HEALTH LOGS (Grid-Level Telemetry)
 CREATE TABLE IF NOT EXISTS crop_health_logs (
     id BIGSERIAL PRIMARY KEY,
     grid_id INTEGER NOT NULL REFERENCES grids(id) ON DELETE CASCADE,
@@ -166,11 +147,9 @@ CREATE TABLE IF NOT EXISTS crop_health_logs (
 CREATE INDEX IF NOT EXISTS idx_crop_health_grid_recent ON crop_health_logs(grid_id, recorded_at DESC);
 CREATE INDEX IF NOT EXISTS idx_crop_health_status ON crop_health_logs(status);
 
--- ============================================================================
 -- SEED DATA & INITIALIZATION
--- ============================================================================
 
--- 1. Seed Initial Ethiopian Regions
+-- Seed Initial Ethiopian Regions
 INSERT INTO regions (id, name, primary_crop, climate_zone, center_latitude, center_longitude)
 VALUES 
   (1, 'Arsi', 'Wheat', 'Highland / Cool Sub-humid', 7.500000, 39.200000),
@@ -191,8 +170,8 @@ INSERT INTO users (first_name, father_name, phone, fayda_id, email, password_has
 VALUES (
     'Moderator',
     'Admin',
-    '0911000000',
-    '1111222233334444',
+    '0920872453',
+    '1234567891234567',
     'moderator@nebula.com',
     '$2b$10$b9/afgmT.7mXtczjqgfNMe2mQGGUwHeUkLCvCiDQLKGiTjeYuuOIu',
     'moderator',
