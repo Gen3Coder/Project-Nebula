@@ -137,13 +137,13 @@ function DashboardPage({
         }}
       />
 
-      {activeCrop === 'Wheat' && (
+      {(activeCrop === 'Wheat' || activeCrop === 'Coffee') && (
         <>
           <div className="crop-summary-card">
             <div>
               <p className="section-kicker">{t.monitoring}</p>
-              <h2>{t.wheat}</h2>
-              <p>{t.readingsIntro}</p>
+              <h2>{activeCrop === 'Coffee' ? t.coffee : t.wheat}</h2>
+              <p>{activeCrop === 'Coffee' ? t.coffeeText : t.readingsIntro}</p>
             </div>
             <div className={`status-pill ${statusTone}`}>
               <span className="status-dot"></span>
@@ -194,7 +194,11 @@ function DashboardPage({
               {crop.recommendation && (
                 <div className="guidance-card" style={{ marginBottom: '1rem' }}>
                   <span className="guidance-icon">
-                    <Sprout size={22} aria-hidden="true" />
+                    {activeCrop === 'Coffee' ? (
+                      <Coffee size={22} aria-hidden="true" />
+                    ) : (
+                      <Sprout size={22} aria-hidden="true" />
+                    )}
                   </span>
                   <div>
                     <h3>{t.recommendation || 'Recommendation'}</h3>
@@ -205,8 +209,8 @@ function DashboardPage({
 
               <div className="section-heading">
                 <div>
-                  <h2>{t.wheatReadings}</h2>
-                  <p>{t.readingsText}</p>
+                  <h2>{activeCrop === 'Coffee' ? t.coffeeReadings : t.wheatReadings}</h2>
+                  <p>{activeCrop === 'Coffee' ? t.coffeeReadingsText : t.readingsText}</p>
                 </div>
                 <button
                   className="secondary-button"
@@ -249,20 +253,6 @@ function DashboardPage({
             </>
           )}
         </>
-      )}
-
-      {activeCrop === 'Coffee' && (
-        <div className="message-card coffee-message">
-          <span className="icon-tile">
-            <Coffee size={28} aria-hidden="true" />
-          </span>
-          <p className="eyebrow">{t.coffeeEyebrow}</p>
-          <h2>{t.coffeeTitle}</h2>
-          <p>{t.coffeeText}</p>
-          <button className="secondary-button" onClick={() => setPage('guidance')}>
-            {t.seeNext}
-          </button>
-        </div>
       )}
     </section>
   )

@@ -97,9 +97,10 @@ const am = {
   loadErrorText: 'የመረጃ ምንጩ እየሠራ መሆኑን ያረጋግጡና እንደገና ይሞክሩ።',
   tryAgain: 'እንደገና ይሞክሩ',
   coffeeEyebrow: 'የቡና ክትትል',
-  coffeeTitle: 'የቡና መረጃን እናገናኝ',
-  coffeeText:
-    'በዚህ የሙከራ ስሪት ቡናን መምረጥ ይቻላል፤ ነገር ግን አሁን የስንዴ የሙከራ መረጃ ብቻ ይቀርባል። ስለዚህ የቡና መለኪያዎች አልታዩም።',
+  coffeeTitle: 'የቡና ሁኔታ መረጃ',
+  coffeeText: 'የጅማ ቡና እርሻ የቀጥታ የአየር ንብረት እና የፈንገስ ስጋት መረጃዎች።',
+  coffeeReadings: 'የቡና ማሳ መረጃዎች',
+  coffeeReadingsText: 'የጅማ ቡና እርሻ የቀጥታ የአየር ንብረት እና የፈንገስ ስጋት መረጃዎች።',
   seeNext: 'ቀጣዩን ይመልከቱ',
   prototype: 'የሙከራ ስሪት',
 

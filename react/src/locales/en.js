@@ -98,9 +98,11 @@ const en = {
   loadErrorText: 'Check that the backend is running, then try again.',
   tryAgain: 'Try again',
   coffeeEyebrow: 'COFFEE MONITORING',
-  coffeeTitle: "Let's connect your coffee data",
+  coffeeTitle: "Coffee telemetry & health",
   coffeeText:
-    'Coffee is selectable in this prototype, but the backend currently provides sample readings for wheat only. No coffee measurements are being invented or shown.',
+    'Live environmental readings, canopy density, and fungal risk alerts for Jimma coffee plantations.',
+  coffeeReadings: 'Coffee field readings',
+  coffeeReadingsText: 'Live telemetry and disease risk factors for Jimma coffee farms.',
   seeNext: "See what's next",
   prototype: 'Early prototype',
 
