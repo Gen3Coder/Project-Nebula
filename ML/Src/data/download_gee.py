@@ -1,29 +1,29 @@
-
 """
 NASA Space Apps 2026
 Agricultural False-Start Early Warning System
 
-Google Earth Engine data extraction.
+Google Earth Engine data extraction (updated to pull up to END_DATE, e.g. 2026-11-15).
+
+New in this version:
+- Every time-series dataset asks Earth Engine for its LATEST available image and
+  clips the end date to it. Satellite/reanalysis products lag behind "today", so
+  requesting empty future days would create empty chunks and failed downloads.
+- Previously downloaded years are reused from the cache, so only the new period
+  (2026) is downloaded.
 
 Datasets:
-1. ERA5-Land
-2. GPM IMERG
-3. SMAP L3
-4. SMAP L4
-5. MODIS
-6. Sentinel-2
-7. SRTM
-8. SoilGrids
-9. ESA WorldCover
+1. ERA5-Land   2. GPM IMERG   3. SMAP L3   4. SMAP L4   5. MODIS
+6. Sentinel-2  7. SRTM        8. SoilGrids 9. ESA WorldCover
 
-Raw data is saved under:
-ML/Data/Raw/
-
-Requires:
-earthengine-api
-pandas
-requests
+Raw data is saved under: ML/Data/Raw/
 """
+
+import sys
+from pathlib import Path
+
+# Make "ML.Src..." importable no matter where the script is started from
+# (this file lives in <project>/ML/Src/data/, so the project root is 3 levels up)
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 import argparse
 import traceback
@@ -40,9 +40,47 @@ from ML.Src.processing.config import START_DATE, END_DATE
 # HELPER FUNCTIONS
 # ==========================================================
 
-def valid_date_range(start, end, available_from, dataset_name):
+def latest_available(collection, sub_daily=False, end=None):
+    """Date of the newest image in an Earth Engine collection.
+
+    Only the last ~400 days before `end` are scanned first (scanning a huge archive such as
+    Sentinel-2 from the beginning is very slow). If nothing is found there, the whole
+    collection is scanned.
+
+    sub_daily=True drops the last day, because a collection of half-hourly or
+    3-hourly images may contain only part of that day (a partial daily total
+    would look like a dry day).
     """
-    Clip a requested date range to a dataset's availability.
+    ic = ee.ImageCollection(collection) if isinstance(collection, str) else collection
+
+    millis = None
+
+    if end is not None:
+        window_end = (pd.Timestamp(end) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+        window_start = (pd.Timestamp(end) - pd.Timedelta(days=400)).strftime("%Y-%m-%d")
+        recent = ic.filterDate(window_start, window_end)
+        millis = g._retry(lambda: recent.aggregate_max("system:time_start").getInfo())
+
+    if millis is None:
+        millis = g._retry(lambda: ic.aggregate_max("system:time_start").getInfo())
+
+    if millis is None:
+        return None
+
+    latest = pd.Timestamp(millis, unit="ms").normalize()
+
+    if sub_daily:
+        latest -= pd.Timedelta(days=1)
+
+    return latest
+
+
+def valid_date_range(start, end, available_from, dataset_name,
+                     collection=None, sub_daily=False):
+    """
+    Clip a requested date range to a dataset's availability:
+    - start is moved forward to the first date the dataset exists
+    - end is moved back to the newest image Earth Engine has (if collection given)
     Returns None if there is no overlap.
     """
 
@@ -52,6 +90,18 @@ def valid_date_range(start, end, available_from, dataset_name):
     )
 
     effective_end = pd.Timestamp(end)
+
+    if collection is not None:
+
+        latest = latest_available(collection, sub_daily, end=effective_end)
+
+        if latest is not None and latest < effective_end:
+            print(
+                f"[info] {dataset_name}: newest data is {latest.date()} "
+                f"(requested up to {effective_end.date()}). "
+                f"Downloading up to {latest.date()}."
+            )
+            effective_end = latest
 
     if effective_start > effective_end:
         print(
@@ -72,6 +122,21 @@ def valid_date_range(start, end, available_from, dataset_name):
 
 def era5land(start, end):
 
+    collection_id = "ECMWF/ERA5_LAND/DAILY_AGGR"
+
+    date_range = valid_date_range(
+        start,
+        end,
+        "1981-01-01",
+        "ERA5-Land",
+        collection=collection_id
+    )
+
+    if date_range is None:
+        return
+
+    effective_start, effective_end = date_range
+
     bands = [
         "temperature_2m",
         "dewpoint_temperature_2m",
@@ -85,23 +150,16 @@ def era5land(start, end):
         "volumetric_soil_water_layer_4",
     ]
 
-    # ERA5-Land daily aggregate collection.
-    #
-    # Expected units:
-    # Temperature: Kelvin
-    # Precipitation: metres
-    # Solar radiation: J/m2
-    # Soil water: m3/m3
-    # Wind components: m/s
+    # Units: Kelvin, metres, J/m2, m3/m3, m/s
 
     g.extract_daily(
         name="ERA5_LAND",
-        collection_id="ECMWF/ERA5_LAND/DAILY_AGGR",
+        collection_id=collection_id,
         bands=bands,
         daily_fn=lambda collection: collection.mean(),
         scale=11132,
-        start=start,
-        end=end,
+        start=effective_start,
+        end=effective_end,
         chunk="year"
     )
 
@@ -112,11 +170,15 @@ def era5land(start, end):
 
 def imerg(start, end):
 
+    collection_id = "NASA/GPM_L3/IMERG_V07"
+
     date_range = valid_date_range(
         start,
         end,
         "1998-01-01",
-        "GPM IMERG"
+        "GPM IMERG",
+        collection=collection_id,
+        sub_daily=True
     )
 
     if date_range is None:
@@ -126,12 +188,8 @@ def imerg(start, end):
 
     def daily_precipitation(collection):
 
-        # IMERG precipitation is a rate.
-        # Each nominal half-hour interval contributes:
-        # precipitation rate * 0.5 hours.
-        #
-        # Confirm the collection's temporal sampling and units
-        # against its Earth Engine catalog documentation.
+        # IMERG precipitation is a rate (mm/hour).
+        # Each half-hour image contributes rate * 0.5 hours.
 
         return collection.map(
             lambda image: image.multiply(0.5)
@@ -139,7 +197,7 @@ def imerg(start, end):
 
     g.extract_daily(
         name="GPM_IMERG",
-        collection_id="NASA/GPM_L3/IMERG_V07",
+        collection_id=collection_id,
         bands=["precipitation"],
         daily_fn=daily_precipitation,
         scale=11132,
@@ -155,11 +213,13 @@ def imerg(start, end):
 
 def smap_l3(start, end):
 
+    # The newest data comes from version 006.
     date_range = valid_date_range(
         start,
         end,
         "2015-03-31",
-        "SMAP L3"
+        "SMAP L3",
+        collection="NASA/SMAP/SPL3SMP_E/006"
     )
 
     if date_range is None:
@@ -175,29 +235,17 @@ def smap_l3(start, end):
 
     # Version 005: historical observations.
     old_collection = (
-        ee.ImageCollection(
-            "NASA/SMAP/SPL3SMP_E/005"
-        )
-        .filterDate(
-            "2015-03-31",
-            "2023-12-04"
-        )
+        ee.ImageCollection("NASA/SMAP/SPL3SMP_E/005")
+        .filterDate("2015-03-31", "2023-12-04")
     )
 
     # Version 006: observations from December 4, 2023.
     new_collection = (
-        ee.ImageCollection(
-            "NASA/SMAP/SPL3SMP_E/006"
-        )
-        .filterDate(
-            "2023-12-04",
-            exclusive_end
-        )
+        ee.ImageCollection("NASA/SMAP/SPL3SMP_E/006")
+        .filterDate("2023-12-04", exclusive_end)
     )
 
-    collection = old_collection.merge(
-        new_collection
-    )
+    collection = old_collection.merge(new_collection)
 
     g.extract_daily(
         name="SMAP_L3",
@@ -220,11 +268,15 @@ def smap_l3(start, end):
 
 def smap_l4(start, end):
 
+    collection_id = "NASA/SMAP/SPL4SMGP/008"
+
     date_range = valid_date_range(
         start,
         end,
         "2015-03-31",
-        "SMAP L4"
+        "SMAP L4",
+        collection=collection_id,
+        sub_daily=True
     )
 
     if date_range is None:
@@ -232,14 +284,9 @@ def smap_l4(start, end):
 
     effective_start, effective_end = date_range
 
-    # SMAP L4 is a modeled soil moisture product.
-    # Surface and root-zone soil moisture are distinct variables.
-    #
-    # The selected bands must be verified against collection 008.
-
     g.extract_daily(
         name="SMAP_L4",
-        collection_id="NASA/SMAP/SPL4SMGP/008",
+        collection_id=collection_id,
         bands=[
             "sm_surface",
             "sm_rootzone"
@@ -258,11 +305,14 @@ def smap_l4(start, end):
 
 def modis(start, end):
 
+    collection_id = "MODIS/061/MOD13Q1"
+
     date_range = valid_date_range(
         start,
         end,
         "2000-02-18",
-        "MODIS"
+        "MODIS",
+        collection=collection_id
     )
 
     if date_range is None:
@@ -274,15 +324,8 @@ def modis(start, end):
 
         def prepare_image(image):
 
-            # SummaryQA:
-            # 0 = good quality
-            # 1 = marginal quality
-            # 2 = snow/ice
-            # 3 = cloudy
-
-            good_quality = (
-                image.select("SummaryQA").lte(1)
-            )
+            # SummaryQA: 0 good, 1 marginal, 2 snow/ice, 3 cloudy
+            good_quality = image.select("SummaryQA").lte(1)
 
             vegetation = (
                 image.select(["NDVI", "EVI"])
@@ -295,16 +338,9 @@ def modis(start, end):
                 ["system:time_start"]
             )
 
-        return (
-            ee.ImageCollection("MODIS/061/MOD13Q1")
-            .map(prepare_image)
-        )
+        return ee.ImageCollection(collection_id).map(prepare_image)
 
-    # Required by gee_utils.extract_images().
-    builder.band_names = [
-        "NDVI",
-        "EVI"
-    ]
+    builder.band_names = ["NDVI", "EVI"]
 
     g.extract_images(
         name="MODIS",
@@ -323,11 +359,14 @@ def modis(start, end):
 
 def sentinel2(start, end):
 
+    collection_id = "COPERNICUS/S2_SR_HARMONIZED"
+
     date_range = valid_date_range(
         start,
         end,
         "2017-01-01",
-        "Sentinel-2"
+        "Sentinel-2",
+        collection=collection_id
     )
 
     if date_range is None:
@@ -341,33 +380,12 @@ def sentinel2(start, end):
 
             scl = image.select("SCL")
 
-            # Retain selected surface classes.
-            # This is a basic mask, not a complete cloud-shadow
-            # removal algorithm.
-            good_quality = (
-                scl.gte(4).And(scl.lte(7))
-            )
+            # Basic mask, not a complete cloud-shadow removal algorithm.
+            good_quality = scl.gte(4).And(scl.lte(7))
 
-            ndvi = (
-                image.normalizedDifference(
-                    ["B8", "B4"]
-                )
-                .rename("NDVI")
-            )
-
-            ndre = (
-                image.normalizedDifference(
-                    ["B8", "B5"]
-                )
-                .rename("NDRE")
-            )
-
-            ndmi = (
-                image.normalizedDifference(
-                    ["B8", "B11"]
-                )
-                .rename("NDMI")
-            )
+            ndvi = image.normalizedDifference(["B8", "B4"]).rename("NDVI")
+            ndre = image.normalizedDifference(["B8", "B5"]).rename("NDRE")
+            ndmi = image.normalizedDifference(["B8", "B11"]).rename("NDMI")
 
             output = (
                 ndvi
@@ -382,27 +400,14 @@ def sentinel2(start, end):
             )
 
         return (
-            ee.ImageCollection(
-                "COPERNICUS/S2_SR_HARMONIZED"
-            )
-            .filter(
-                ee.Filter.lt(
-                    "CLOUDY_PIXEL_PERCENTAGE",
-                    70
-                )
-            )
+            ee.ImageCollection(collection_id)
+            .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", 70))
             .map(prepare_image)
         )
 
-    builder.band_names = [
-        "NDVI",
-        "NDRE",
-        "NDMI"
-    ]
+    builder.band_names = ["NDVI", "NDRE", "NDMI"]
 
-    # Multiple Sentinel-2 tiles can cover the same region
-    # on the same date. Preserve individual observations here.
-    # Aggregate them by date later in processing.
+    # Several tiles can share a date; average them by date in processing.
 
     g.extract_images(
         name="SENTINEL2",
@@ -415,34 +420,19 @@ def sentinel2(start, end):
 
 
 # ==========================================================
-# 7. SRTM TERRAIN
+# 7. SRTM TERRAIN (static)
 # ==========================================================
 
 def srtm(start, end):
 
-    # Static terrain variables.
-    # They do not need to be downloaded separately for each year.
-
     terrain = ee.Terrain.products(
         ee.Image("USGS/SRTMGL1_003")
-    )
-
-    terrain = terrain.select([
-        "elevation",
-        "slope",
-        "aspect"
-    ])
+    ).select(["elevation", "slope", "aspect"])
 
     reducer = (
         ee.Reducer.mean()
-        .combine(
-            ee.Reducer.minMax(),
-            sharedInputs=True
-        )
-        .combine(
-            ee.Reducer.stdDev(),
-            sharedInputs=True
-        )
+        .combine(ee.Reducer.minMax(), sharedInputs=True)
+        .combine(ee.Reducer.stdDev(), sharedInputs=True)
     )
 
     g.extract_static(
@@ -454,54 +444,26 @@ def srtm(start, end):
 
 
 # ==========================================================
-# 8. SOILGRIDS
+# 8. SOILGRIDS (static)
 # ==========================================================
 
 def soilgrids(start, end):
 
-    # IMPORTANT:
-    # Verify that the SoilGrids Earth Engine assets and band
-    # names below are currently accessible before running.
-    #
-    # Do not assume these paths exist just because they follow
-    # a plausible naming convention.
-
-    depths = [
-        "0-5cm",
-        "5-15cm",
-        "15-30cm"
-    ]
-
-    properties = [
-        "clay",
-        "sand",
-        "silt",
-        "soc",
-        "bdod"
-    ]
+    depths = ["0-5cm", "5-15cm", "15-30cm"]
+    properties = ["clay", "sand", "silt", "soc", "bdod"]
 
     image = None
 
     for prop in properties:
 
-        band_names = [
-            f"{prop}_{depth}_mean"
-            for depth in depths
-        ]
-
-        asset_id = (
-            f"projects/soilgrids-isric/{prop}_mean"
-        )
+        band_names = [f"{prop}_{depth}_mean" for depth in depths]
 
         layer = (
-            ee.Image(asset_id)
+            ee.Image(f"projects/soilgrids-isric/{prop}_mean")
             .select(band_names)
         )
 
-        if image is None:
-            image = layer
-        else:
-            image = image.addBands(layer)
+        image = layer if image is None else image.addBands(layer)
 
     g.extract_static(
         name="SOILGRIDS",
@@ -511,28 +473,18 @@ def soilgrids(start, end):
 
 
 # ==========================================================
-# 9. ESA WORLDCOVER
+# 9. ESA WORLDCOVER (static)
 # ==========================================================
 
 def worldcover(start, end):
 
-    # WorldCover class 40 = cropland.
-    # The regional mean of the binary image estimates
-    # the fraction of the buffer classified as cropland.
-
     world_cover = (
-        ee.ImageCollection(
-            "ESA/WorldCover/v200"
-        )
+        ee.ImageCollection("ESA/WorldCover/v200")
         .first()
         .select("Map")
     )
 
-    cropland_fraction = (
-        world_cover
-        .eq(40)
-        .rename("cropland_fraction")
-    )
+    cropland_fraction = world_cover.eq(40).rename("cropland_fraction")
 
     g.extract_static(
         name="WORLDCOVER",
@@ -578,40 +530,19 @@ def main():
         help="Dataset names or 'all'."
     )
 
-    parser.add_argument(
-        "--start",
-        default=START_DATE,
-        help="Start date YYYY-MM-DD."
-    )
-
-    parser.add_argument(
-        "--end",
-        default=END_DATE,
-        help="End date YYYY-MM-DD."
-    )
+    parser.add_argument("--start", default=START_DATE, help="Start date YYYY-MM-DD.")
+    parser.add_argument("--end", default=END_DATE, help="End date YYYY-MM-DD.")
 
     args = parser.parse_args()
 
-    # Validate dates.
-    start = pd.Timestamp(args.start)
-    end = pd.Timestamp(args.end)
+    if pd.Timestamp(args.start) > pd.Timestamp(args.end):
+        parser.error("Start date must not be later than end date.")
 
-    if start > end:
-        parser.error(
-            "Start date must not be later than end date."
-        )
-
-    # Initialize Earth Engine once.
     g.init_ee()
 
-    # Resolve requested datasets.
     if "all" in args.datasets:
-
         names = list(JOBS.keys())
-
     else:
-
-        # Remove duplicate names while preserving order.
         names = list(dict.fromkeys(args.datasets))
 
     successful = []
@@ -620,12 +551,10 @@ def main():
     print("\n" + "=" * 60)
     print(" AGRICULTURAL DATA EXTRACTION")
     print("=" * 60)
-
     print(f"Start date: {args.start}")
     print(f"End date:   {args.end}")
     print(f"Datasets:   {', '.join(names)}")
 
-    # Execute each dataset independently.
     for name in names:
 
         print("\n" + "=" * 60)
@@ -633,63 +562,33 @@ def main():
         print("=" * 60)
 
         try:
-
-            JOBS[name](
-                args.start,
-                args.end
-            )
-
+            JOBS[name](args.start, args.end)
             successful.append(name)
-
-            print(
-                f"\n[SUCCESS] {name.upper()} completed."
-            )
+            print(f"\n[SUCCESS] {name.upper()} completed.")
 
         except Exception as error:
-
-            failed.append({
-                "dataset": name,
-                "error": str(error)
-            })
-
-            print(
-                f"\n[FAILED] {name.upper()}"
-            )
-
+            failed.append({"dataset": name, "error": str(error)})
+            print(f"\n[FAILED] {name.upper()}")
             print(f"Reason: {error}")
-
             traceback.print_exc()
+            print("\nContinuing with the next dataset...")
 
-            print(
-                "\nContinuing with the next dataset..."
-            )
-
-    # Final summary.
     print("\n" + "=" * 60)
     print(" EXTRACTION SUMMARY")
     print("=" * 60)
 
     print("\nSuccessful datasets:")
-
     for name in successful:
         print(f"  [OK] {name}")
 
     print("\nFailed datasets:")
-
     for item in failed:
         print(f"  [FAILED] {item['dataset']}")
         print(f"           {item['error']}")
 
     print("\n" + "=" * 60)
-
-    print(
-        f"Completed: {len(successful)} / {len(names)}"
-    )
-
-    print(
-        f"Failed:    {len(failed)} / {len(names)}"
-    )
-
+    print(f"Completed: {len(successful)} / {len(names)}")
+    print(f"Failed:    {len(failed)} / {len(names)}")
     print("=" * 60)
 
     if failed:
