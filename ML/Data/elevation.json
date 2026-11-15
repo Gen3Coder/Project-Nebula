@@ -1,0 +1,26 @@
+{
+  "Arsi": {
+    "point_m": 2376.0,
+    "min_m": 1636.0,
+    "max_m": 3850.0,
+    "mean_m": 2320.0,
+    "area": "~44 km square around the point",
+    "source": "SRTM 30 m (via OpenTopoData)"
+  },
+  "Bale,Robe": {
+    "point_m": 2483.0,
+    "min_m": 2275.0,
+    "max_m": 3940.0,
+    "mean_m": 2643.4,
+    "area": "~44 km square around the point",
+    "source": "SRTM 30 m (via OpenTopoData)"
+  },
+  "Jimma": {
+    "point_m": 1730.0,
+    "min_m": 1481.0,
+    "max_m": 2565.0,
+    "mean_m": 1960.0,
+    "area": "~44 km square around the point",
+    "source": "SRTM 30 m (via OpenTopoData)"
+  }
+}
