@@ -165,7 +165,7 @@ SET primary_crop = EXCLUDED.primary_crop,
 SELECT setval('regions_id_seq', COALESCE((SELECT MAX(id) FROM regions), 1));
 
 -- 2. Seed Hardcoded Demo Moderator (password: moderator123)
--- Phone: 0911000000 | Fayda ID: 1111222233334444 | Role: moderator
+-- Phone: 0920872453 | Fayda ID: 1111222233334444 | Role: moderator
 INSERT INTO users (first_name, father_name, phone, fayda_id, email, password_hash, role, region, registered_by)
 VALUES (
     'Moderator',
