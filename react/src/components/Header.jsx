@@ -1,11 +1,11 @@
-import { Info, Languages, Wheat } from 'lucide-react'
+import { Info, Languages, LogIn, LogOut, Shield, User, Wheat } from 'lucide-react'
 
-function Header({ page, setPage, language, toggleLanguage, t }) {
+function Header({ page, setPage, language, toggleLanguage, t, currentUser, onLogout }) {
   return (
     <header className="topbar">
       <button
         className="brand"
-        onClick={() => setPage('welcome')}
+        onClick={() => setPage(currentUser?.role === 'moderator' ? 'moderator' : 'welcome')}
         aria-label="Nebula home"
       >
         <span className="brand-mark">N</span>
@@ -35,6 +35,17 @@ function Header({ page, setPage, language, toggleLanguage, t }) {
           </nav>
         )}
 
+        {currentUser?.role === 'moderator' && (
+          <button
+            className={page === 'moderator' ? 'nav-link active' : 'nav-link'}
+            onClick={() => setPage('moderator')}
+            style={{ fontWeight: 700, color: 'var(--green)' }}
+          >
+            <Shield className="nav-icon" size={19} aria-hidden="true" />
+            {t.moderatorPanel}
+          </button>
+        )}
+
         <button
           className="language-button"
           onClick={toggleLanguage}
@@ -43,6 +54,39 @@ function Header({ page, setPage, language, toggleLanguage, t }) {
           <Languages className="language-icon" size={19} aria-hidden="true" />
           {t.switchLanguage}
         </button>
+
+        {currentUser ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span
+              style={{
+                fontSize: '0.85rem',
+                color: 'var(--muted)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <User size={15} /> {currentUser.firstName}
+              <small style={{ color: 'var(--green)', fontWeight: 600 }}>({currentUser.role})</small>
+            </span>
+            <button
+              className="text-button"
+              onClick={onLogout}
+              style={{ fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              title={t.logout}
+            >
+              <LogOut size={16} /> {t.logout}
+            </button>
+          </div>
+        ) : (
+          <button
+            className="secondary-button"
+            onClick={() => setPage('auth')}
+            style={{ padding: '8px 14px', fontSize: '0.88rem' }}
+          >
+            <LogIn size={16} /> {t.login}
+          </button>
+        )}
       </div>
     </header>
   )

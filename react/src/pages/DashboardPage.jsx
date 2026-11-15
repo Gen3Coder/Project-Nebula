@@ -14,6 +14,7 @@ import MetricCard from '../components/MetricCard'
 
 function DashboardPage({
   t,
+  currentUser,
   locationSummary,
   setPage,
   selectedCrops,
@@ -37,13 +38,17 @@ function DashboardPage({
   getMetricInterpretation,
   dateLocale,
 }) {
+  const farmerGreeting = currentUser?.firstName
+    ? `${t.helloFarmer.replace(/!$/, '')} ${currentUser.firstName}!`
+    : t.helloFarmer
+
   return (
     <section className="dashboard-page">
       <div className="dashboard-heading">
         <div>
           <p className="eyebrow">{t.dashboardEyebrow}</p>
           <h1>
-            {t.helloFarmer} <Sprout size={28} aria-hidden="true" />
+            {farmerGreeting} <Sprout size={28} aria-hidden="true" />
           </h1>
           <p className="location-line">
             <MapPin size={18} aria-hidden="true" /> {locationSummary}

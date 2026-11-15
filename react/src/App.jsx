@@ -7,6 +7,8 @@ import WelcomePage from './pages/WelcomePage'
 import LocationPage from './pages/LocationPage'
 import DashboardPage from './pages/DashboardPage'
 import GuidancePage from './pages/GuidancePage'
+import AuthPage from './pages/AuthPage'
+import ModeratorPage from './pages/ModeratorPage'
 import translations from './locales'
 import {
   buildCropHealthURL,
@@ -30,12 +32,24 @@ function App() {
 
   const [page, setPage] = useState('welcome')
   const [riskPreference, setRiskPreference] = useState('balanced')
-  const [farmLocation, setFarmLocation] = useState({
-    region: '',
+
+  // Logged-in user state (Farmer or Moderator)
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('nebula-user')
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
+  })
+
+  const [farmLocation, setFarmLocation] = useState(() => ({
+    region: currentUser?.region || '',
     cropType: 'Wheat',
     latitude: '',
     longitude: '',
-  })
+  }))
+
   const [coordinates, setCoordinates] = useState('')
   const [locationMessage, setLocationMessage] = useState('')
   const [selectedCrops, setSelectedCrops] = useState(['Wheat'])
@@ -44,6 +58,25 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  function handleAuthSuccess(user, token) {
+    setCurrentUser(user)
+    localStorage.setItem('nebula-user', JSON.stringify(user))
+    if (token) localStorage.setItem('nebula-token', token)
+    if (user?.region) {
+      setFarmLocation((prev) => ({
+        ...prev,
+        region: user.region,
+      }))
+    }
+  }
+
+  function handleLogout() {
+    setCurrentUser(null)
+    localStorage.removeItem('nebula-user')
+    localStorage.removeItem('nebula-token')
+    setPage('welcome')
+  }
 
   useEffect(() => {
     if (page === 'location' && !farmLocation.latitude && !farmLocation.longitude) {
@@ -77,8 +110,9 @@ function App() {
       setError(false)
 
       try {
+        const regionToQuery = farmLocation.region || currentUser?.region || 'Arsi'
         const url = buildCropHealthURL(
-          farmLocation.region || 'Arsi',
+          regionToQuery,
           farmLocation.cropType || 'Wheat'
         )
         const response = await fetch(url)
@@ -106,7 +140,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [page, activeCrop, refreshKey, farmLocation.region, farmLocation.cropType])
+  }, [page, activeCrop, refreshKey, farmLocation.region, farmLocation.cropType, currentUser?.region])
 
   function updateLocation(field, value) {
     setFarmLocation((previous) => ({
@@ -164,7 +198,7 @@ function App() {
       : coordinates
 
   const locationParts = [
-    farmLocation.region,
+    farmLocation.region || currentUser?.region,
     locationCoords,
   ].filter((part) => part && part.trim())
 
@@ -238,10 +272,28 @@ function App() {
         language={language}
         toggleLanguage={toggleLanguage}
         t={t}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       <main className="main-content">
         {page === 'welcome' && <WelcomePage setPage={setPage} t={t} />}
+
+        {page === 'auth' && (
+          <AuthPage
+            t={t}
+            setPage={setPage}
+            onAuthSuccess={handleAuthSuccess}
+          />
+        )}
+
+        {page === 'moderator' && (
+          <ModeratorPage
+            t={t}
+            setPage={setPage}
+            currentUser={currentUser}
+          />
+        )}
 
         {page === 'location' && (
           <LocationPage
@@ -259,6 +311,7 @@ function App() {
         {page === 'dashboard' && (
           <DashboardPage
             t={t}
+            currentUser={currentUser}
             locationSummary={locationSummary}
             setPage={setPage}
             selectedCrops={selectedCrops}

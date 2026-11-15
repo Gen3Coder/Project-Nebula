@@ -108,3 +108,30 @@ ON CONFLICT (name) DO NOTHING;
 
 -- Reset sequence to continue after id 3
 SELECT setval('regions_id_seq', (SELECT MAX(id) FROM regions));
+
+-- Authentication & User Management
+CREATE TABLE IF NOT EXISTS users (
+    user_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    father_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(30) NOT NULL UNIQUE,
+    fayda_id VARCHAR(16) NOT NULL UNIQUE,
+    email VARCHAR(150),
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'farmer' CHECK (role IN ('farmer', 'moderator')),
+    region VARCHAR(50) DEFAULT 'Arsi',
+    registered_by VARCHAR(20) DEFAULT 'self', -- 'self' or 'moderator'
+    refresh_token_hash VARCHAR(255),
+    is_banned BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+CREATE INDEX IF NOT EXISTS idx_users_fayda ON users(fayda_id);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- Seed initial hardcoded moderator (password: moderator123)
+INSERT INTO users (first_name, father_name, phone, fayda_id, email, password_hash, role, region, registered_by)
+VALUES ('Moderator', 'Admin', '0911000000', '1111222233334444', 'moderator@nebula.com', '$2b$10$b9/afgmT.7mXtczjqgfNMe2mQGGUwHeUkLCvCiDQLKGiTjeYuuOIu', 'moderator', 'Arsi', 'system')
+ON CONFLICT (phone) DO UPDATE SET role = 'moderator', password_hash = EXCLUDED.password_hash;
