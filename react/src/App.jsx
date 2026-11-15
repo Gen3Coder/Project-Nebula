@@ -12,7 +12,6 @@ import ModeratorPage from './pages/ModeratorPage'
 import translations from './locales'
 import {
   buildCropHealthURL,
-  sampleRainfall,
   sampleDrySpellRisk,
   sampleRainfallReference,
 } from './constants/farmConfig'
@@ -370,7 +369,7 @@ function App() {
             sampleDecision={sampleDecision}
             decisionReason={decisionReason}
             riskOptions={riskOptions}
-            sampleRainfall={sampleRainfall}
+            rainfallHistory={crop?.rainfallHistory || []}
             sampleRainfallReference={sampleRainfallReference}
             crop={crop}
             loading={loading}

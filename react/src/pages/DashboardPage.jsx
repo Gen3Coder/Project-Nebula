@@ -25,7 +25,7 @@ function DashboardPage({
   sampleDecision,
   decisionReason,
   riskOptions,
-  sampleRainfall,
+  rainfallHistory = [],
   sampleRainfallReference,
   crop,
   loading,
@@ -122,7 +122,7 @@ function DashboardPage({
         }}
       />
       <RainChart
-        values={sampleRainfall}
+        values={rainfallHistory}
         labels={{
           title: t.rainHistory,
           caption: t.rainChartCaption,
@@ -133,7 +133,7 @@ function DashboardPage({
           threshold: sampleRainfallReference,
           dayAgo: t.dayAgo,
           daysAgo: t.daysAgo,
-          sample: t.sampleData,
+          sample: '',
         }}
       />
 

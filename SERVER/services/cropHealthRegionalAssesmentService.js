@@ -1,5 +1,9 @@
-import { fetchAPIDataS } from './APIServices.js';
-import { insertRegionalHealthLogQ } from '../repositories/regionalCropHealthRepository.js';
+import { fetchAPIDataS, fetchRainfallHistoryAPI, resolveRegionId } from './APIServices.js';
+import {
+  insertRegionalHealthLogQ,
+  getRecentRainfallHistoryQ,
+} from '../repositories/regionalCropHealthRepository.js';
+
 // Default crops for each zone
 const REGION_CROPS = {
   Arsi: 'WHEAT',
@@ -26,10 +30,10 @@ const STRESS_RECOMMENDATIONS = {
   },
 };
 
-//Diagnostic scoring engine for Wheat & Coffee. Reused by both Regional and Grid-level services.
+// Diagnostic scoring engine for Wheat & Coffee. Reused by both Regional and Grid-level services.
 export const evaluateCropHealthRules = (metrics, cropType = 'WHEAT') => {
   const crop = cropType.toUpperCase();
-  const { temperature, humidity, soil_moisture, ndvi, rainfall = 0 } = metrics;
+  const { temperature, humidity, soil_moisture, ndvi = 0.5, rainfall = 0 } = metrics;
   
   let score = 100;
   const detectedStresses = [];
@@ -102,30 +106,59 @@ export const evaluateCropHealthRules = (metrics, cropType = 'WHEAT') => {
   };
 };
 
-// Directly pulls API data for Arsi, Bale, or Jimma and evaluates health.
- 
+/**
+ * Pulls live API data from RainGuard Ethiopia for Arsi, Bale, or Jimma,
+ * evaluates crop health, persists current reading to DB, and retrieves
+ * real rainfall history from the database to plot graphs.
+ */
 export const getRegionalCropHealthS = async (regionIdentifier = 'Arsi', customCrop = null) => {
   const apiMetrics = await fetchAPIDataS(regionIdentifier);
   const crop = (customCrop || REGION_CROPS[apiMetrics.zone] || 'WHEAT').toUpperCase();
   const diagnosis = evaluateCropHealthRules(apiMetrics, crop);
-  // Map zone to region_id (1: Arsi, 2: Jimma, 3: Bale)
-  const regionMap = { Arsi: 1, Jimma: 2, Bale: 3 };
-  const region_id = regionMap[apiMetrics.zone] || 1;
+  const region_id = resolveRegionId(apiMetrics.zone);
 
-  await insertRegionalHealthLogQ({
-    region_id,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
-    crop: crop === 'COFFEE' ? 'Coffee' : 'Wheat',
-    temperature: apiMetrics.temperature,
-    humidity: apiMetrics.humidity,
-    soil_moisture: apiMetrics.soil_moisture,
-    rainfall: apiMetrics.rainfall,
-    vegetation_coverage: apiMetrics.vegetation_coverage,
-    ndvi: apiMetrics.ndvi,
-    health_score: diagnosis.healthScore,
-    status: diagnosis.status,
-    primary_stress_factor: diagnosis.primaryStressFactor,
-    recommendation: diagnosis.recommendation,
-  });
+  // Insert latest reading into the database
+  try {
+    await insertRegionalHealthLogQ({
+      region_id,
+      crop: crop === 'COFFEE' ? 'Coffee' : 'Wheat',
+      temperature: apiMetrics.temperature,
+      humidity: apiMetrics.humidity,
+      soil_moisture: apiMetrics.soil_moisture,
+      rainfall: apiMetrics.rainfall,
+      vegetation_coverage: apiMetrics.vegetation_coverage,
+      ndvi: apiMetrics.ndvi,
+      health_score: diagnosis.healthScore,
+      status: diagnosis.status,
+      primary_stress_factor: diagnosis.primaryStressFactor,
+      recommendation: diagnosis.recommendation,
+    });
+  } catch (dbErr) {
+    console.warn(`[Failed to record latest regional reading in DB: ${dbErr.message}]`);
+  }
+
+  // Retrieve rainfall history from database for plotting graphs (last 14 days)
+  let rainfallRecords = [];
+  try {
+    rainfallRecords = await getRecentRainfallHistoryQ(region_id, 14);
+  } catch (err) {
+    console.warn(`[Failed to query DB rainfall history: ${err.message}]`);
+  }
+
+  // If DB didn't have enough records, fallback to fetching directly from the RainGuard Ethiopia API
+  if (!rainfallRecords || rainfallRecords.length < 5) {
+    try {
+      const apiHistory = await fetchRainfallHistoryAPI(regionIdentifier, 14);
+      if (apiHistory.length > 0) {
+        rainfallRecords = apiHistory;
+      }
+    } catch (e) {
+      console.warn(`[Could not fetch rainfall fallback: ${e.message}]`);
+    }
+  }
+
+  const rainfallHistory = (rainfallRecords || []).map((r) => Number(r.rainfall || 0));
+
   return {
     success: true,
     data: {
@@ -141,8 +174,14 @@ export const getRegionalCropHealthS = async (regionIdentifier = 'Arsi', customCr
         humidity: apiMetrics.humidity,
         windSpeed: 12,
         rainfall: apiMetrics.rainfall,
+        rainfall7d: apiMetrics.rainfall_7d,
+        rainfall30d: apiMetrics.rainfall_30d,
+        elevation: apiMetrics.elevation,
         ndvi: apiMetrics.ndvi,
       },
+      rainfallHistory,
+      rainfallRecords,
+      source: apiMetrics.source,
     },
   };
 };
