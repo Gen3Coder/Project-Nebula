@@ -43,31 +43,58 @@ function App() {
     }
   })
 
+  function getRegionDefaultCrop(region) {
+    if (!region) return 'Wheat'
+    const clean = String(region).trim().toLowerCase()
+    return clean === 'jimma' ? 'Coffee' : 'Wheat'
+  }
+
+  const initialRegion = currentUser?.region || ''
+  const initialCrop = getRegionDefaultCrop(initialRegion)
+
   const [farmLocation, setFarmLocation] = useState(() => ({
-    region: currentUser?.region || '',
-    cropType: 'Wheat',
+    region: initialRegion,
+    cropType: initialCrop,
     latitude: '',
     longitude: '',
   }))
 
   const [coordinates, setCoordinates] = useState('')
   const [locationMessage, setLocationMessage] = useState('')
-  const [selectedCrops, setSelectedCrops] = useState(['Wheat'])
-  const [activeCrop, setActiveCrop] = useState('Wheat')
+  const [selectedCrops, setSelectedCrops] = useState([initialCrop])
+  const [activeCrop, setActiveCrop] = useState(initialCrop)
   const [crop, setCrop] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Sync crop whenever currentUser changes or loads from localStorage
+  useEffect(() => {
+    if (currentUser?.region) {
+      const userCrop = getRegionDefaultCrop(currentUser.region)
+      setFarmLocation((prev) => ({
+        ...prev,
+        region: currentUser.region,
+        cropType: userCrop,
+      }))
+      setSelectedCrops([userCrop])
+      setActiveCrop(userCrop)
+    }
+  }, [currentUser?.region])
 
   function handleAuthSuccess(user, token) {
     setCurrentUser(user)
     localStorage.setItem('nebula-user', JSON.stringify(user))
     if (token) localStorage.setItem('nebula-token', token)
     if (user?.region) {
+      const userCrop = getRegionDefaultCrop(user.region)
       setFarmLocation((prev) => ({
         ...prev,
         region: user.region,
+        cropType: userCrop,
       }))
+      setSelectedCrops([userCrop])
+      setActiveCrop(userCrop)
     }
   }
 
@@ -75,6 +102,14 @@ function App() {
     setCurrentUser(null)
     localStorage.removeItem('nebula-user')
     localStorage.removeItem('nebula-token')
+    setFarmLocation({
+      region: '',
+      cropType: 'Wheat',
+      latitude: '',
+      longitude: '',
+    })
+    setSelectedCrops(['Wheat'])
+    setActiveCrop('Wheat')
     setPage('welcome')
   }
 
@@ -101,7 +136,7 @@ function App() {
   }, [page, farmLocation.latitude, farmLocation.longitude])
 
   useEffect(() => {
-    if (page !== 'dashboard' || activeCrop !== 'Wheat') return
+    if (page !== 'dashboard') return
 
     let cancelled = false
 
@@ -111,9 +146,10 @@ function App() {
 
       try {
         const regionToQuery = farmLocation.region || currentUser?.region || 'Arsi'
+        const cropToQuery = activeCrop || farmLocation.cropType || getRegionDefaultCrop(regionToQuery)
         const url = buildCropHealthURL(
           regionToQuery,
-          farmLocation.cropType || 'Wheat'
+          cropToQuery
         )
         const response = await fetch(url)
 
@@ -143,10 +179,22 @@ function App() {
   }, [page, activeCrop, refreshKey, farmLocation.region, farmLocation.cropType, currentUser?.region])
 
   function updateLocation(field, value) {
-    setFarmLocation((previous) => ({
-      ...previous,
-      [field]: value,
-    }))
+    setFarmLocation((previous) => {
+      const next = {
+        ...previous,
+        [field]: value,
+      }
+      if (field === 'region') {
+        const regionalCrop = getRegionDefaultCrop(value)
+        next.cropType = regionalCrop
+        setSelectedCrops([regionalCrop])
+        setActiveCrop(regionalCrop)
+      } else if (field === 'cropType') {
+        setSelectedCrops([value])
+        setActiveCrop(value)
+      }
+      return next
+    })
   }
 
   function useCurrentLocation() {

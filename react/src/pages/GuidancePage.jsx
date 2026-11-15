@@ -9,15 +9,15 @@ function GuidancePage({ t, activeCrop, crop, setPage }) {
         <p>{t.guidanceIntro}</p>
       </div>
 
-      {activeCrop === 'Wheat' && crop ? (
+      {crop ? (
         <div className="guidance-card">
           <span className="guidance-icon">
             <Search size={22} aria-hidden="true" />
           </span>
           <div>
-            <h2>{t.checkWheat}</h2>
+            <h2>{activeCrop === 'Coffee' ? t.coffee : t.checkWheat}</h2>
             <p>
-              {t.wheatGuidance} "{crop.status}".
+              {activeCrop === 'Coffee' ? 'Current field assessment for Coffee:' : t.wheatGuidance} "{crop.status}".
             </p>
             {crop.recommendation && (
               <p style={{ fontWeight: 600, marginTop: '0.5rem' }}>

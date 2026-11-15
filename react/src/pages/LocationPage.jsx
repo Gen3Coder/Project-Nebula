@@ -29,10 +29,16 @@ function LocationPage({
           <label className="field">
             <span>{t.region}</span>
             <input
+              list="ethiopian-regions"
               value={farmLocation.region}
               onChange={(event) => updateLocation('region', event.target.value)}
-              placeholder={t.regionHint}
+              placeholder={t.regionHint || 'e.g. Jimma, Arsi, Bale'}
             />
+            <datalist id="ethiopian-regions">
+              <option value="Jimma">Jimma (Coffee)</option>
+              <option value="Arsi">Arsi (Wheat)</option>
+              <option value="Bale">Bale (Wheat)</option>
+            </datalist>
           </label>
           <label className="field">
             <span>{t.cropType}</span>
